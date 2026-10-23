@@ -36,8 +36,8 @@ final class NovaDevice: ObservableObject {
     private static let selectedKey = "NovaMac.selected"
 
     init() {
-        var ips = UserDefaults.standard.stringArray(forKey: Self.listKey) ?? []
-        if ips.isEmpty { ips = ["192.168.0.10"] }
+        // No default controller: the list starts empty and holds only what the user added (plus USB cards found).
+        let ips = UserDefaults.standard.stringArray(forKey: Self.listKey) ?? []
         savedIPs = ips
         let stored = UserDefaults.standard.string(forKey: Self.selectedKey) ?? ""
         if stored.hasPrefix("usb:") {
@@ -45,9 +45,10 @@ final class NovaDevice: ObservableObject {
         } else if stored.hasPrefix("ip:") {
             selection = .network(String(stored.dropFirst(3)))
         } else {
-            selection = .network(ips[0])
+            selection = .network(ips.first ?? "")
         }
         usbPorts = SerialPorts.list()
+        pruneConnected()
     }
 
     /// IP of the selected network controller; empty for a USB sending card.
@@ -81,17 +82,79 @@ final class NovaDevice: ObservableObject {
     }
 
     func removeIP(_ address: String) {
-        guard savedIPs.count > 1 || selection.isUSB else { return }      // keep at least one entry
         savedIPs.removeAll { $0 == address }
         UserDefaults.standard.set(savedIPs, forKey: Self.listKey)
         if connected.remove("ip:" + address) != nil { UserDefaults.standard.set(Array(connected), forKey: "NovaMac.connected") }
         if selection.key == "ip:" + address {
             if let first = savedIPs.first { select(.network(first)) }
             else if let usb = usbPorts.first { select(.usb(path: usb, baud: 115_200)) }
+            else { clearSelection() }
         }
     }
 
-    func scanUSB() { usbPorts = SerialPorts.list() }
+    @Published var discovering = false
+    @Published var discoveryNote = ""
+
+    /// Find controllers: scans the Mac's local networks for NovaStar controllers (TCP 5200) and adds new ones.
+    func discoverControllers() async {
+        guard !discovering else { return }
+        discovering = true
+        discoveryNote = String(localized: "Searching the local network…")
+        defer { discovering = false }
+        let result = await ControllerDiscovery.scan()
+        guard !result.subnets.isEmpty else {
+            discoveryNote = String(localized: "No network with an IPv4 address. Connect the Mac to the controller's network.")
+            return
+        }
+        var added = 0
+        for found in result.found {
+            remember(found.id, for: "ip:" + found.ip)
+            if !savedIPs.contains(found.ip) { savedIPs.append(found.ip); added += 1 }
+        }
+        UserDefaults.standard.set(savedIPs, forKey: Self.listKey)
+        let networks = result.subnets.map(\.text).joined(separator: ", ")
+        if result.found.isEmpty {
+            discoveryNote = String(localized: "No controllers found on \(networks).")
+        } else {
+            discoveryNote = String(localized: "Found \(result.found.count) controller(s), \(added) new.")
+            if case .network(let address) = selection, address.isEmpty { select(.network(result.found[0].ip)) }
+        }
+        if !result.openButSilent.isEmpty {
+            discoveryNote += " " + String(localized: "Port 5200 open but no answer: \(result.openButSilent.joined(separator: ", ")) (busy with another program?).")
+        }
+    }
+
+    /// True when the list holds at least one controller (network entry or USB sending card).
+    var hasControllers: Bool { !savedIPs.isEmpty || !usbPorts.isEmpty }
+
+    /// Nothing left in the list: forget the selection so no page keeps talking to a removed controller.
+    private func clearSelection() {
+        selection = .network("")
+        UserDefaults.standard.removeObject(forKey: Self.selectedKey)
+        model = "—"; hardwareID = "—"; protocolValue = "—"; capability = "—"; maxPacket = "—"
+        status = "No controllers"
+    }
+
+    func scanUSB() {
+        let ports = SerialPorts.list()
+        if ports != usbPorts { usbPorts = ports }
+        pruneConnected()
+        if selection.isUSB, case .usb(let path, _) = selection, !ports.contains(path) {
+            if let first = savedIPs.first { select(.network(first)) }
+            else if let usb = ports.first { select(.usb(path: usb, baud: 115_200)) }
+            else { clearSelection() }
+        }
+    }
+
+    /// "Connected" keeps only controllers that are still in the list (an unplugged USB card drops out).
+    private func pruneConnected() {
+        let present = Set(savedIPs.map { "ip:" + $0 } + usbPorts.map { "usb:" + $0 })
+        let kept = connected.intersection(present)
+        if kept != connected {
+            connected = kept
+            UserDefaults.standard.set(Array(kept), forKey: "NovaMac.connected")
+        }
+    }
 
     /// A network controller got a new IP (VX network settings): the list entry, selection and connection follow it.
     func renameIP(_ old: String, to new: String) {
@@ -204,6 +267,7 @@ final class NovaDevice: ObservableObject {
     /// Reads the identification registers of the selected controller (TCP 5200 or USB).
     func read() {
         guard !busy else { return }
+        if case .network(let address) = selection, address.isEmpty { status = "No controllers"; return }
         busy = true
         let target = selection
         status = "Reading \(target.label)..."

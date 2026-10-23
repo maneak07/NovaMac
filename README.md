@@ -35,6 +35,7 @@ Receiving cards: XC160-1 (NovaStar A/XC series). Other models will probably work
 1. Download `NovaMac-<version>.zip` from [Releases](https://github.com/maneak07/NovaMac/releases) and unzip it.
 2. Move **NovaMac.app** to Applications.
 3. The app is not signed with an Apple Developer ID yet, so the first time **right-click → Open → Open**. (Or: System Settings → Privacy & Security → "Open Anyway".)
+4. When you first connect a network controller, macOS asks to let NovaMac find devices on your local network — click **Allow**. If a controller answers to `ping` but NovaMac shows "No route to host", turn NovaMac on in System Settings → Privacy & Security → **Local Network** and restart the app.
 
 Requirements: macOS 14 Sonoma or later (built and tested on macOS 27; older versions are expected to work but not yet tested on hardware), Apple silicon or Intel.
 
@@ -58,7 +59,6 @@ Enable **Agent API** in the app, copy the token, then add `nova_mcp.py` to your 
 
 - [AGENT-API.md](AGENT-API.md) — local API and MCP tools
 - [PROTOCOL-ScreenConnection.md](PROTOCOL-ScreenConnection.md) — protocol notes (register map found by observation)
-- [HANDOFF.md](HANDOFF.md) — project state and open tasks
 - `nova_bridge.py` — USB ↔ Parallels serial bridge with logging, for capturing what NovaLCT sends
 
 ## Feedback

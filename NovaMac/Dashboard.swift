@@ -164,6 +164,15 @@ struct DashboardPage: View {
                 Text("Controllers").font(.headline)
                 Text("\(device.connected.count) connected").font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                if device.discovering { ProgressView().controlSize(.small) }
+                Button {
+                    Task { await device.discoverControllers() }
+                } label: {
+                    Label("Find controllers", systemImage: "magnifyingglass")
+                }
+                .buttonStyle(.borderless)
+                .disabled(device.discovering)
+                .help("Search the Mac's local networks for NovaStar controllers (TCP 5200) and add them to the list.")
                 Button {
                     device.scanUSB()
                     device.identifyAll()
@@ -177,8 +186,14 @@ struct DashboardPage: View {
                 ForEach(endpoints, id: \.key) { tile($0) }
             }
             if endpoints.isEmpty {
-                Text("No controllers yet. Add a network controller below or connect a USB sending card.")
+                Text("No controllers yet. Click Find controllers, add an IP below or connect a USB sending card.")
                     .foregroundStyle(.secondary)
+            }
+            if !device.discoveryNote.isEmpty {
+                Text(device.discoveryNote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
             }
             HStack(spacing: 10) {
                 Image(systemName: "plus.circle").foregroundStyle(.secondary)

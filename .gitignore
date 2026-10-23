@@ -11,3 +11,10 @@ build/
 # Release packaging
 *.zip
 *.dmg
+
+# Local research / capture files (kept on disk, not published)
+NovaMac-chat-export.md
+HANDOFF.md
+usb-capture.log
+novamac-dump.rcfgx
+*.har

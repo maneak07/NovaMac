@@ -7,6 +7,134 @@
     " " : {
 
     },
+    "Find controllers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти контроллеры"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查找控制器"
+          }
+        }
+      }
+    },
+    "Found %lld controller(s), %lld new." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найдено контроллеров: %lld, новых: %lld."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找到 %lld 个控制器，其中 %lld 个为新增。"
+          }
+        }
+      }
+    },
+    "No controllers found on %@." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В сети %@ контроллеры не найдены."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 上未找到控制器。"
+          }
+        }
+      }
+    },
+    "No controllers yet. Click Find controllers, add an IP below or connect a USB sending card." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Контроллеров пока нет. Нажмите «Найти контроллеры», добавьте IP ниже или подключите USB-карту."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无控制器。点击“查找控制器”，在下方添加 IP，或连接 USB 发送卡。"
+          }
+        }
+      }
+    },
+    "No network with an IPv4 address. Connect the Mac to the controller's network." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет сети с IPv4-адресом. Подключите Mac к сети контроллера."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有带 IPv4 地址的网络。请将 Mac 连接到控制器所在网络。"
+          }
+        }
+      }
+    },
+    "Port 5200 open but no answer: %@ (busy with another program?)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Порт 5200 открыт, но нет ответа: %@ (занят другой программой?)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端口 5200 已打开但无响应：%@（是否被其他程序占用？）。"
+          }
+        }
+      }
+    },
+    "Search the Mac's local networks for NovaStar controllers (TCP 5200) and add them to the list." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать контроллеры NovaStar в локальных сетях Mac (TCP 5200) и добавить их в список."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Mac 的本地网络中搜索 NovaStar 控制器（TCP 5200）并添加到列表。"
+          }
+        }
+      }
+    },
+    "Searching the local network…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск в локальной сети…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在搜索本地网络…"
+          }
+        }
+      }
+    },
     "—" : {
 
     },
@@ -3221,22 +3349,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未打开配置"
-          }
-        }
-      }
-    },
-    "No controllers yet. Add a network controller below or connect a USB sending card." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Контроллеров пока нет. Добавьте сетевой контроллер ниже или подключите USB-карту."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无控制器。请在下方添加网络控制器或连接 USB 发送卡。"
           }
         }
       }
