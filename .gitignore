@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Xcode user state and build output
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.xcarchive
+
+# Release packaging
+*.zip
+*.dmg
