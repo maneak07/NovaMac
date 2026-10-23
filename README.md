@@ -34,7 +34,12 @@ Receiving cards: XC160-1 (NovaStar A/XC series). Other models will probably work
 
 1. Download `NovaMac-<version>.zip` from [Releases](https://github.com/maneak07/NovaMac/releases) and unzip it.
 2. Move **NovaMac.app** to Applications.
-3. The app is not signed with an Apple Developer ID yet, so the first time **right-click → Open → Open**. (Or: System Settings → Privacy & Security → "Open Anyway".)
+3. The app is not signed with an Apple Developer ID yet, so macOS blocks the first launch:
+   - **macOS 15 Sequoia and later:** open NovaMac, click **Done** in the "Apple could not verify…" dialog, then go to System Settings → Privacy & Security, scroll down and click **Open Anyway** next to NovaMac, and confirm with your password.
+   - **macOS 14 Sonoma:** right-click NovaMac → **Open** → **Open**.
+   - Or in Terminal: `xattr -dr com.apple.quarantine /Applications/NovaMac.app`
+
+   You only need to do this once.
 4. When you first connect a network controller, macOS asks to let NovaMac find devices on your local network — click **Allow**. If a controller answers to `ping` but NovaMac shows "No route to host", turn NovaMac on in System Settings → Privacy & Security → **Local Network** and restart the app.
 
 Requirements: macOS 14 Sonoma or later (built and tested on macOS 27; older versions are expected to work but not yet tested on hardware), Apple silicon or Intel.
