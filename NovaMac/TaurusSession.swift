@@ -28,7 +28,7 @@ nonisolated enum TaurusSession {
     static let idleSeconds: TimeInterval = 90
 
     private final class Session: @unchecked Sendable {
-        let fd: Int32
+        var fd: Int32            // -1 once closed; guarded by registryLock
         var lastUse = Date()
         var alive = true
         let lock = NSLock()      // one 5200 session at a time on this player
@@ -66,11 +66,35 @@ nonisolated enum TaurusSession {
         }
         guard let identity = probe(ip: ip) else { return nil }   // unreachable: let the real session report it
         guard let sn = identity else { registry[ip] = .plain; return nil }
+        known.insert(ip)                          // also when the login below fails: the UI offers the password
         let session = try login(ip: ip, sn: sn)
         registry[ip] = .taurus(session)
-        known.insert(ip)
         startHeartbeat(ip: ip, session)
         return session.lock
+    }
+
+    /// Stores the password for the player at `ip` (empty = factory password again) and drops its session,
+    /// so the next access logs in with it.
+    static func setPassword(_ password: String, for ip: String) {
+        var stored = UserDefaults.standard.dictionary(forKey: "NovaMac.secrets") as? [String: String] ?? [:]
+        stored["taurus:" + ip] = password.isEmpty ? nil : password
+        UserDefaults.standard.set(stored, forKey: "NovaMac.secrets")
+        forget(ip: ip)
+    }
+
+    static func hasStoredPassword(_ ip: String) -> Bool {
+        (UserDefaults.standard.dictionary(forKey: "NovaMac.secrets") as? [String: String])?["taurus:" + ip] != nil
+    }
+
+    /// Closes the login of `ip` (if any); the next session logs in again.
+    static func forget(ip: String) {
+        registryLock.withLock {
+            if case .taurus(let session)? = registry[ip] {
+                session.alive = false
+                if session.fd >= 0 { Darwin.close(session.fd); session.fd = -1 }
+            }
+            registry[ip] = nil
+        }
     }
 
     /// nil = no answer on 5200; .some(nil) = not a Taurus; .some(sn) = Taurus with that sending-card SN.
@@ -117,7 +141,7 @@ nonisolated enum TaurusSession {
                 guard header[8] == UInt8(ascii: "P"), header[9] == UInt8(ascii: "R") else { continue }
                 let answer = (try? JSONSerialization.jsonObject(with: Data(body))) as? [String: Any]
                 guard answer?["logined"] as? Bool == true else {
-                    throw fail("rejected (wrong password? store it as \"taurus:\(ip)\")")
+                    throw fail("password rejected — set it with Password… on the Dashboard tile")
                 }
                 return Session(fd: fd)
             }
@@ -138,7 +162,7 @@ nonisolated enum TaurusSession {
                 // A 5200 session running right now counts as use.
                 if session.lock.try() { session.lock.unlock() } else { session.lastUse = Date() }
                 let idle = Date().timeIntervalSince(session.lastUse) > idleSeconds
-                var ok = !idle && (try? send(session.fd, beat)) != nil
+                var ok = session.alive && !idle && (try? send(session.fd, beat)) != nil
                 // Throw away what the player sends (its own heartbeats); 0 bytes = connection closed.
                 while ok {
                     let n = scratch.withUnsafeMutableBytes { Darwin.recv(session.fd, $0.baseAddress!, 4096, MSG_DONTWAIT) }
@@ -146,7 +170,7 @@ nonisolated enum TaurusSession {
                 }
                 if !ok {
                     session.alive = false
-                    Darwin.close(session.fd)
+                    if session.fd >= 0 { Darwin.close(session.fd); session.fd = -1 }
                     if case .taurus(let s)? = registry[ip], s === session { registry[ip] = nil }
                 }
                 registryLock.unlock()
