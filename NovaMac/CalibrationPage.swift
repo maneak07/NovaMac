@@ -8,6 +8,8 @@ import Combine
 //   write dev1 port p card FFFF  0x010000B3 = 05 (calibration on) / 00 (off)
 // Modes (second capture: Chroma alone = 01): 00 off, 01 chroma, 03 brightness.
 // Full grayscale: not captured yet (greyed out in NovaLCT on the test cards — no such coefficients stored).
+// Save to HW (TB30 / A8s-N, 07.11.2026): dev1 port p card FFFF 0x01000011 = 01 after the switch keeps the
+// mode across a power cycle. Without it the cards come back with the stored mode.
 
 nonisolated enum ScreenCalibration {
     enum Mode: Int, CaseIterable, Identifiable, Sendable {
@@ -24,6 +26,7 @@ nonisolated enum ScreenCalibration {
 
     static let modeRegister: UInt32 = 0x0200_0051
     static let switchRegister: UInt32 = 0x0100_00B3
+    static let saveRegister: UInt32 = 0x0100_0011
 
     /// Raw mode byte of the first card on `port` (0-based).
     static func read(_ endpoint: NovaEndpoint, port: Int) async throws -> Int {
@@ -51,6 +54,19 @@ nonisolated enum ScreenCalibration {
             }
         }
     }
+
+    /// Stores the current mode in every card of `ports` (nil = all ports).
+    static func save(_ endpoint: NovaEndpoint, ports: [Int]?) async throws {
+        try await NovaLink.run(endpoint, timeout: 3) { socket in
+            for p in ports ?? [0xFF] {
+                if p == 0xFF {
+                    try socket.transact(.write(saveRegister, [0x01], destination: 0xFF, device: 1, port: 0xFF, card: 0xFFFF))
+                } else {
+                    try socket.transact(.write(saveRegister, [0x01], device: 1, port: UInt8(p), card: 0xFFFF))
+                }
+            }
+        }
+    }
 }
 
 struct CalibrationPage: View {
@@ -64,6 +80,7 @@ struct CalibrationPage: View {
     @State private var status = ""
     @State private var error: String?
     @State private var started = false
+    @State private var confirmSave = false
 
     private var chosen: [ScreenDocument] { workspace.screens.filter { selected.contains($0.id) } }
 
@@ -188,14 +205,37 @@ struct CalibrationPage: View {
                     }
                     Spacer()
                     Button("Read current") { readCurrent() }
+                    Button("Save to HW") { confirmSave = true }
+                        .help("Stores the calibration mode in the receiving cards")
                 }
-                Text("Takes effect immediately, not saved — a power cycle restores the stored setting. Full grayscale needs cards that store full-grayscale coefficients (not captured yet). Low grayscale and dark/bright lines come next.")
+                Text("Takes effect immediately; Save to HW keeps it across a power cycle, otherwise the cards come back with the stored setting. Full grayscale needs cards that store full-grayscale coefficients (not captured yet). Low grayscale and dark/bright lines come next.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .disabled(chosen.isEmpty)
             .padding(6)
         } label: {
             Text("Calibration").font(.headline)
+        }
+        .alert("Save the calibration mode?", isPresented: $confirmSave) {
+            Button("Cancel", role: .cancel) {}
+            Button("Save") { save() }
+        } message: {
+            Text("Stores \((mode ?? .off).title) in the receiving cards of the selected screens, so it stays after a power cycle.")
+        }
+    }
+
+    private func save() {
+        let jobs = targets
+        Task { @MainActor in
+            busy = true
+            defer { busy = false }
+            var failed: [String] = []
+            for (endpoint, ports) in jobs {
+                do { try await ScreenCalibration.save(endpoint, ports: ports) }
+                catch { failed.append(device.title(for: endpoint) + ": " + error.localizedDescription) }
+            }
+            error = failed.isEmpty ? nil : failed.joined(separator: "\n")
+            status = failed.isEmpty ? "Saved to HW: \((mode ?? .off).title)" : "Not saved everywhere"
         }
     }
 
