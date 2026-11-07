@@ -240,7 +240,8 @@ enum ScreenConnectionWriter {
     /// Sends over the given link. Network: verified through the controller's REST model.
     /// USB: verified by reading the sending card's coordinate table back.
     static func send(_ endpoint: NovaEndpoint, layout target: Layout) async throws -> String {
-        if case .network(let ip) = endpoint { return try await send(ip: ip, layout: target) }
+        // A Taurus has the classic MCTRL register map and no web interface: register send with read-back.
+        if case .network(let ip) = endpoint, !TaurusSession.isTaurus(ip) { return try await send(ip: ip, layout: target) }
         return try await sendRegisters(endpoint, layout: target)
     }
 

@@ -296,10 +296,15 @@ nonisolated enum NovaLink {
     }
 
     /// Opens one TCP 5200 session on a background thread, runs `body`, and closes it.
+    /// A Taurus player is logged in first (TaurusSession) and gets its sessions one after another.
     static func run<T: Sendable>(ip: String, timeout: Int = 3, _ body: @escaping @Sendable (NovaSocket) throws -> T) async throws -> T {
         try await Task.detached(priority: .userInitiated) {
-            let socket = try NovaSocket(host: ip, timeout: timeout)
-            return try body(socket)
+            let open = { () throws -> T in
+                let socket = try NovaSocket(host: ip, timeout: timeout)
+                return try body(socket)
+            }
+            guard let taurus = try TaurusSession.prepare(ip: ip) else { return try open() }
+            return try taurus.withLock(open)
         }.value
     }
 }
@@ -517,6 +522,7 @@ nonisolated enum ControllerModels {
     /// Verified: MCTRL300 over USB (21.10.2026) reads F639 / 0001; VX1000 Pro reads family 0x622B.
     static let byHardware: [Int: String] = [0xF639: "MCTRL300"]
     static let byFamily: [Int: String] = [0x622B: "VX1000 Pro", 0x1113: "MEE410"]   // MEE410: FFFF / 1113 (21.10.2026)
+        .merging(TaurusSession.families) { a, _ in a }                               // TB30: 0000 / 9620 (07.11.2026)
 
     /// Address of the sending card's area record for port `port` (0-based): flag, W, H, X, Y (u16).
     /// MCTRL300 (captured): 0x02000050 + 9·p. VX Pro (captured): 0x02000050 + 0x13·p.
@@ -556,7 +562,8 @@ nonisolated enum ControllerModels {
                                     // MEE410: port numbers in the protocol go in groups of 8 with 6 used
                                     // (0–5, 8–13, 16–21 answer; 6, 7, 14, 15 never do — register dump 21.10.2026),
                                     // so 24 port numbers are searched to reach every connected port.
-                                    "MEE410": 24]
+                                    "MEE410": 24,
+                                    "TB30": 1]
         return table[model]
     }
 
