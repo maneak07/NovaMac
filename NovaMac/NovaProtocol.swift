@@ -304,7 +304,15 @@ nonisolated enum NovaLink {
                 return try body(socket)
             }
             guard let taurus = try TaurusSession.prepare(ip: ip) else { return try open() }
-            return try taurus.withLock(open)
+            do {
+                return try taurus.withLock(open)
+            } catch NovaLinkError.nack(4, _) {
+                // The player dropped the login although its connection is still open (seen when Wi-Fi gaps
+                // delay the heartbeats): every register answers ack 4 again. Log in anew and run once more.
+                TaurusSession.forget(ip: ip)
+                guard let again = try TaurusSession.prepare(ip: ip) else { return try open() }
+                return try again.withLock(open)
+            }
         }.value
     }
 }
