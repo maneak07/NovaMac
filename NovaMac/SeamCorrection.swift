@@ -74,6 +74,7 @@ struct SeamPanel: View {
     @State private var busy = false
     @State private var status = ""
     @State private var error: String?
+    @State private var confirmReset = false
 
     private struct Card { let port: Int, card: Int, rect: PixelRect }
 
@@ -170,6 +171,8 @@ struct SeamPanel: View {
                     Button("All rows") { selected = Set(seams.filter(\.isRow)) }
                     Button("All columns") { selected = Set(seams.filter { !$0.isRow }) }
                     Button("Deselect") { selected.removeAll() }
+                    Button("Reset all seams") { confirmReset = true }
+                        .help("Sets every pixel row and column of the screen to 1.000")
                 }
                 layout
                 HStack(spacing: 12) {
@@ -195,6 +198,12 @@ struct SeamPanel: View {
             .padding(6)
         } label: {
             Text("Seam correction — \(screen.name)").font(.headline)
+        }
+        .alert("Reset all seams?", isPresented: $confirmReset) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset") { resetAll() }
+        } message: {
+            Text("Sets every pixel row and column of \(screen.name) to 1.000, also seams set with another module size or in an earlier session. Not saved until you press Save to HW.")
         }
     }
 
@@ -280,6 +289,29 @@ struct SeamPanel: View {
                 for seam in chosen { values[seam] = v }
                 status = String(format: "%.3f on %d segment(s), %d line writes. Not saved yet — press Save to HW.", v, chosen.count, all.count)
             } catch { self.error = error.localizedDescription }
+        }
+    }
+
+    /// Every pixel row (full width) and column (without the first and last row, as a column seam) of
+    /// every card at 1.000: clears seams whose module grid is no longer known.
+    private func resetAll() {
+        var all: [SeamBrightness.Line] = []
+        for c in cards {
+            let w = c.rect.width, h = c.rect.height
+            for y in 0..<h { all.append(.init(port: c.port, card: c.card, x: 0, y: y, width: w, height: 1)) }
+            if h > 2 { for x in 0..<w { all.append(.init(port: c.port, card: c.card, x: x, y: 1, width: 1, height: h - 2)) } }
+        }
+        guard !all.isEmpty else { return }
+        let endpoint = screen.endpoint
+        busy = true; error = nil
+        status = "Resetting \(all.count) lines…"
+        Task { @MainActor in
+            defer { busy = false }
+            do {
+                try await SeamBrightness.apply(endpoint, lines: all, value: 1)
+                values.removeAll(); selected.removeAll(); value = 1
+                status = "All seams at 1.000 (\(all.count) line writes). Not saved yet — press Save to HW."
+            } catch { status = ""; self.error = error.localizedDescription }
         }
     }
 
