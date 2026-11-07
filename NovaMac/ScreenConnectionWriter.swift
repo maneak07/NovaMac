@@ -472,6 +472,7 @@ enum ScreenFlash {
 //   → W 0x05000000…0x05002100 NSSD screen file (NovaLCT's own encoded copy, not decoded)
 //   → W FF 0x01000001 = 00 (rsv 06) → W FF dev3 0x05000000 = 00 (rsv 06)
 //   → W FF dev1 0x01000011 = 00 (rsv 06) → W FF dev4 0x01000011 = 00 (rsv 06).
+// TB30 over TCP 5200: same sequence, but the player refuses W FF 0x02100000 (ack 4).
 // NovaMac sends the save commands only. NovaLCT's NSSD file and its SSPE/erase step are left untouched,
 // so NovaLCT keeps showing the layout it saved last; the sending and receiving cards store what they run now.
 enum ClassicSave {
@@ -490,7 +491,10 @@ enum ClassicSave {
                     throw NovaLinkError.badResponse(String(format: "save refused — sending card status 0x%02X (expected 0x5A)", Int(check.first ?? 0)))
                 }
             }
-            try socket.transact(.write(0x0210_0000, [0x55, 0x00], destination: 0xFF))
+            // A Taurus refuses this write (ack 4); NovaLCT carries on without it.
+            let taurus: Bool
+            if case .network(let ip) = endpoint { taurus = TaurusSession.isTaurus(ip) } else { taurus = false }
+            if !taurus { try socket.transact(.write(0x0210_0000, [0x55, 0x00], destination: 0xFF)) }
             try socket.transact(.write(0x0100_0001, [0x00], destination: 0xFF, reserved: 0x06))
             try socket.transact(.write(0x0500_0000, [0x00], destination: 0xFF, device: 3, port: 0xFF, card: 0xFFFF, reserved: 0x06))
             if profile == .classic {
