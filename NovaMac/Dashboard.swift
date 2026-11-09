@@ -152,6 +152,8 @@ struct DashboardPage: View {
     @State private var modelName = ""
     @State private var removing: String?
     @State private var settingsIP: String?
+    @State private var taurusIP: String?
+    @State private var taurusPassword = ""
 
     private var endpoints: [NovaEndpoint] {
         device.savedIPs.map { NovaEndpoint.network($0) }
@@ -219,6 +221,20 @@ struct DashboardPage: View {
         } message: {
             Text("NovaMac does not know this model ID yet. The name is stored for every controller with the same ID.")
         }
+        .alert("Taurus password for \(taurusIP ?? "")", isPresented: Binding(get: { taurusIP != nil }, set: { if !$0 { taurusIP = nil } })) {
+            SecureField("Password (empty = factory password)", text: $taurusPassword)
+            Button("Save") {
+                if let ip = taurusIP {
+                    TaurusSession.setPassword(taurusPassword, for: ip)
+                    center.forget("ip:" + ip)
+                    Task { await center.refreshAll() }
+                }
+                taurusPassword = ""; taurusIP = nil
+            }
+            Button("Cancel", role: .cancel) { taurusPassword = ""; taurusIP = nil }
+        } message: {
+            Text("NovaMac logs in to the player (user admin) before it talks to the sending card. The password is the one of ViPlex / NovaLCT \"Media Player Login\". Stored on this Mac only.")
+        }
         .alert("Remove \(removing ?? "") from the list?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button("Remove", role: .destructive) {
                 if let ip = removing { center.forget("ip:" + ip); device.removeIP(ip) }
@@ -254,6 +270,11 @@ struct DashboardPage: View {
 
     private func isVX(_ endpoint: NovaEndpoint) -> Bool {
         ControllerModels.isVXPro(device.ids[endpoint.key]) || device.models[endpoint.key]?.uppercased().hasPrefix("VX") == true
+    }
+
+    private func isTaurus(_ endpoint: NovaEndpoint) -> Bool {
+        guard case .network(let ip) = endpoint else { return false }
+        return TaurusSession.isTaurus(ip) || TaurusSession.families[device.ids[endpoint.key]?.family ?? -1] != nil
     }
 
     private func addIP() {
@@ -325,6 +346,11 @@ struct DashboardPage: View {
                     Button("Settings…") { settingsIP = ip }
                         .buttonStyle(.borderless).font(.caption)
                         .help("Name, network (IP, mask, gateway, DHCP) and HDCP of this controller")
+                }
+                if case .network(let ip) = endpoint, isTaurus(endpoint) {
+                    Button(TaurusSession.hasStoredPassword(ip) ? "Password ✓…" : "Password…") { taurusPassword = ""; taurusIP = ip }
+                        .buttonStyle(.borderless).font(.caption)
+                        .help("Media player login of this Taurus (user admin). Empty = factory password.")
                 }
                 if case .network(let ip) = endpoint {
                     Button { removing = ip } label: { Image(systemName: "trash") }

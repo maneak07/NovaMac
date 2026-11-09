@@ -3396,6 +3396,22 @@
         }
       }
     },
+    "Media player login of this Taurus (user admin). Empty = factory password." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вход в медиаплеер этого Taurus (пользователь admin). Пусто = заводской пароль."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Taurus 媒体播放器的登录（用户 admin）。留空 = 出厂密码。"
+          }
+        }
+      }
+    },
     "Menus and some messages change after restarting NovaMac." : {
       "localizations" : {
         "ru" : {
@@ -4016,6 +4032,9 @@
         }
       }
     },
+    "NovaMac logs in to the player (user admin) before it talks to the sending card. The password is the one of ViPlex / NovaLCT \"Media Player Login\". Stored on this Mac only." : {
+
+    },
     "NovaStar Engineering Workspace" : {
       "localizations" : {
         "ru" : {
@@ -4318,6 +4337,28 @@
           }
         }
       }
+    },
+    "Password (empty = factory password)" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль (пусто = заводской)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密码（留空 = 出厂密码）"
+          }
+        }
+      }
+    },
+    "Password ✓…" : {
+
+    },
+    "Password…" : {
+
     },
     "Pattern status unavailable via this GET response." : {
       "localizations" : {
@@ -5428,6 +5469,38 @@
         }
       }
     },
+    "Reset all seams" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить все швы"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置所有拼缝"
+          }
+        }
+      }
+    },
+    "Reset all seams?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить все швы?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置所有拼缝？"
+          }
+        }
+      }
+    },
     "Reset connections" : {
       "localizations" : {
         "ru" : {
@@ -5734,6 +5807,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保存到硬件…"
+          }
+        }
+      }
+    },
+    "Save to the hardware?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить в оборудование?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存到硬件？"
           }
         }
       }
@@ -6301,6 +6390,12 @@
         }
       }
     },
+    "Sets every pixel row and column of %@ to 1.000, also seams set with another module size or in an earlier session. Not saved until you press Save to HW." : {
+
+    },
+    "Sets every pixel row and column of the screen to 1.000" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "ru" : {
@@ -6477,6 +6572,22 @@
         }
       }
     },
+    "Store what the cards run now (brightness, gamma, colour, layout) in their flash, so it survives a power cycle" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить во флеш карт то, что сейчас работает (яркость, гамма, цвет, раскладка), чтобы это осталось после выключения питания"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将接收卡当前运行的设置（亮度、伽马、颜色、布局）存入闪存，断电后仍保留"
+          }
+        }
+      }
+    },
     "Stores %@ in the receiving cards of the selected screens, so it stays after a power cycle." : {
       "localizations" : {
         "ru" : {
@@ -6492,6 +6603,9 @@
           }
         }
       }
+    },
+    "Stores everything the sending and receiving cards of %@ run now — brightness, gamma, colour and the screen layout — in their flash. It stays after a power cycle." : {
+
     },
     "Stores the calibration mode in the receiving cards" : {
       "localizations" : {
@@ -6606,6 +6720,9 @@
           }
         }
       }
+    },
+    "Taurus password for %@" : {
+
     },
     "TCP 5200  •  NovaStar Protocol  •  TEST MODE" : {
       "localizations" : {

@@ -248,7 +248,7 @@ enum ScreenConnectionWriter {
         for address in resets { list.append(.write(address, [0], destination: 0xFF)) }
         let le16 = { (v: Int) in NovaBytes.le16(v) }
         // Per-port register blocks:
-        //   VX Pro (port 1 and port 7 captured): 0x02000050 + 0x13·p, port record 0x03200000 + 0x4000·p, 0x02030000 + 2·p.
+        //   VX Pro: area block ControllerModels.vxBlock(p) (block index skips 8…15), port record 0x03200000 + 0x4000·p, 0x02030000 + 2·p.
         //   MCTRL300 (port 1 and port 2 captured): 0x02000050 + 9·p, no port record.
         //   Both: card count 0x03100000 + 0x20·p, coordinate table 0x03000000 + 0x1000·p.
         let p = UInt32(layout.portIndex)
@@ -303,7 +303,8 @@ enum ScreenConnectionWriter {
     /// Sends over the given link. Network: verified through the controller's REST model.
     /// USB: verified by reading the sending card's coordinate table back.
     static func send(_ endpoint: NovaEndpoint, layout target: Layout) async throws -> String {
-        if case .network(let ip) = endpoint { return try await send(ip: ip, layout: target) }
+        // A Taurus has the classic MCTRL register map and no web interface: register send with read-back.
+        if case .network(let ip) = endpoint, !TaurusSession.isTaurus(ip) { return try await send(ip: ip, layout: target) }
         return try await sendRegisters(endpoint, layout: target)
     }
 
@@ -535,6 +536,7 @@ enum ScreenFlash {
 //   → W 0x05000000…0x05002100 NSSD screen file (NovaLCT's own encoded copy, not decoded)
 //   → W FF 0x01000001 = 00 (rsv 06) → W FF dev3 0x05000000 = 00 (rsv 06)
 //   → W FF dev1 0x01000011 = 00 (rsv 06) → W FF dev4 0x01000011 = 00 (rsv 06).
+// TB30 over TCP 5200: same sequence, but the player refuses W FF 0x02100000 (ack 4).
 // NovaMac sends the save commands only. NovaLCT's NSSD file and its SSPE/erase step are left untouched,
 // so NovaLCT keeps showing the layout it saved last; the sending and receiving cards store what they run now.
 enum ClassicSave {
@@ -553,7 +555,10 @@ enum ClassicSave {
                     throw NovaLinkError.badResponse(String(format: "save refused — sending card status 0x%02X (expected 0x5A)", Int(check.first ?? 0)))
                 }
             }
-            try socket.transact(.write(0x0210_0000, [0x55, 0x00], destination: 0xFF))
+            // A Taurus refuses this write (ack 4); NovaLCT carries on without it.
+            let taurus: Bool
+            if case .network(let ip) = endpoint { taurus = TaurusSession.isTaurus(ip) } else { taurus = false }
+            if !taurus { try socket.transact(.write(0x0210_0000, [0x55, 0x00], destination: 0xFF)) }
             try socket.transact(.write(0x0100_0001, [0x00], destination: 0xFF, reserved: 0x06))
             try socket.transact(.write(0x0500_0000, [0x00], destination: 0xFF, device: 3, port: 0xFF, card: 0xFFFF, reserved: 0x06))
             if profile == .classic {

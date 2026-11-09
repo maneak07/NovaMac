@@ -21,6 +21,7 @@ struct BrightnessPage: View {
     @State private var blue: Double = 255
     @State private var pendingColor: (Int, Int, Int)?
     @State private var sendingColor = false
+    @State private var confirmSave = false
 
     private var chosen: [ScreenDocument] { workspace.screens.filter { selected.contains($0.id) } }
 
@@ -39,6 +40,12 @@ struct BrightnessPage: View {
                 }
                 .font(.callout)
             }
+        }
+        .alert("Save to the hardware?", isPresented: $confirmSave) {
+            Button("Save") { saveToHardware() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Stores everything the sending and receiving cards of \(saveTargets.map { device.title(for: $0) }.joined(separator: ", ")) run now — brightness, gamma, colour and the screen layout — in their flash. It stays after a power cycle.")
         }
         .onAppear {
             guard !started else { return }
@@ -173,6 +180,8 @@ struct BrightnessPage: View {
                     }
                     Spacer()
                     Button("Read current") { readCurrent() }
+                    Button("Save to HW") { confirmSave = true }
+                        .help("Store what the cards run now (brightness, gamma, colour, layout) in their flash, so it survives a power cycle")
                 }
             }
             .disabled(chosen.isEmpty)
@@ -314,6 +323,29 @@ struct BrightnessPage: View {
 
     /// Shows the brightness of the first chosen screen.
     private func readCurrent() { Task { @MainActor in await loadCurrent() } }
+
+    /// Controllers of the chosen screens (each once), or the selected controller.
+    private var saveTargets: [NovaEndpoint] {
+        var seen = Set<String>()
+        let list = targets.map(\.0).filter { seen.insert($0.key).inserted }
+        return list.isEmpty ? [device.selection] : list
+    }
+
+    /// Same save as Screen Connection's Save to HW (ClassicSave), for the controllers on this page.
+    private func saveToHardware() {
+        let jobs = saveTargets
+        sending = true
+        Task { @MainActor in
+            defer { sending = false }
+            var done: [String] = [], failed: [String] = []
+            for endpoint in jobs {
+                do { _ = try await ClassicSave.save(endpoint); done.append(device.title(for: endpoint)) }
+                catch { failed.append(device.title(for: endpoint) + ": " + error.localizedDescription) }
+            }
+            status = done.isEmpty ? "" : "Saved to HW: " + done.joined(separator: ", ")
+            error = failed.isEmpty ? nil : "Save failed on " + failed.joined(separator: "; ")
+        }
+    }
 
     private func loadCurrent(fallback: NovaEndpoint? = nil) async {
         // The selected controller's screen first (Dashboard / Controllers choice), then the other chosen screens.

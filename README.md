@@ -15,8 +15,9 @@ Beta (version 0.2). Tested on real hardware:
 | VX1000 Pro | Ethernet (TCP 5200 + Unico web API, port 19999) | screens, layout send/save, brightness, gamma, test patterns, monitoring, device settings |
 | MCTRL300 | USB (CP210x, 115200 8N1) | layout send/save, receiving cards, RCFGX, EDID, test patterns, monitoring |
 | MEE410 | Ethernet (TCP 5200) | multi-port layout, receiving cards |
+| TB30 (Taurus) | Ethernet / Wi-Fi (TCP 5200 after the media player login on TCP 16603) | screens, layout send/save, brightness, receiving cards |
 
-Receiving cards: XC160-1 (NovaStar A/XC series). Other models will probably work for the common features — please report what you find.
+Receiving cards: XC160-1 (NovaStar A/XC series), A8s-N (on the TB30). Other models will probably work for the common features — please report what you find.
 
 ## Features
 
