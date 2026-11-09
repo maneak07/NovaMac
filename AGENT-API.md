@@ -31,7 +31,7 @@ Flash is written only by POST /v1/receiving-cards/save (needs confirm:true). Cha
 | `POST /v1/brightness` `{"percent":60}` | brightness 0–100 % |
 | `POST /v1/gamma` `{"gamma":2.8}` | gamma 1.0–4.0 |
 | `POST /v1/color` `{"red":255,"green":240,"blue":230}` | RGB gains |
-| `POST /v1/calibration` `{"mode":"chroma"}` | off / brightness / chroma |
+| `POST /v1/calibration` `{"mode":"chroma"}` | off / brightness / chroma / full_grayscale (only on cards that offer it) |
 | `POST /v1/mapping` `{"enabled":true}` | card numbers on the LED screen |
 | `POST /v1/layout` `{"controller":"usb:…","port":1,"grid":{"columns":4,"rows":1,"card_width":160,"card_height":360}}` | screen layout on one port (MCTRL, MEE410). Without `"confirm":true` only the plan; with it the layout is sent (RAM, not saved). Also `"cards":[{card,x,y,width,height}]`. Sent like Screen Connection's Send to HW (VX: registers + web model). |
 | `GET /v1/receiving-cards/compare?controller=&port=` | parameter blocks (RCFGX settings) of all cards on a port compared byte by byte: suspects, reference card |

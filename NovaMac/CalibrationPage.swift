@@ -6,21 +6,37 @@ import Combine
 //   read  dev1 port p card 0     0x02000051 (1)   current mode
 //   write dev1 port p card FFFF  0x02000051 = mode
 //   write dev1 port p card FFFF  0x010000B3 = 05 (calibration on) / 00 (off)
-// Modes (second capture: Chroma alone = 01): 00 off, 01 chroma, 03 brightness.
-// Full grayscale: not captured yet (greyed out in NovaLCT on the test cards — no such coefficients stored).
+// Mode byte 0x02000051 (VX2000 Pro, 14×10 cabinets, 09.11.2026: Off 08, Brightness 0B, Chroma 09, Full grayscale 19;
+// VX1000 Pro test cards: 00 / 03 / 01, full grayscale greyed out in NovaLCT):
+//   bits 0–1  00 off · 01 chroma · 11 brightness
+//   bit 4     full grayscale (with chroma)
+//   bit 3     set by the cards themselves (seen only on cards where NovaLCT offers full grayscale) — kept as read.
+// NovaLCT reads the byte first and writes it back with only the mode bits changed; so does NovaMac.
 
 nonisolated enum ScreenCalibration {
     enum Mode: Int, CaseIterable, Identifiable, Sendable {
-        case off = 0, brightness = 3, chroma = 1
+        case off = 0x00, brightness = 0x03, chroma = 0x01, fullGrayscale = 0x11
         var id: Int { rawValue }
         var title: String {
             switch self {
             case .off: return "Disabled"
             case .brightness: return "Brightness"
             case .chroma: return "Chroma"
+            case .fullGrayscale: return "Full grayscale"
             }
         }
     }
+
+    /// Bits of the mode byte that select the mode; the other bits belong to the cards and are kept.
+    static let modeMask = 0x13
+
+    /// Mode encoded in a raw byte read from a card (nil = a combination not seen in NovaLCT).
+    static func mode(of raw: Int) -> Mode? { Mode(rawValue: raw & modeMask) }
+
+    /// Bit 3: only seen on cards where NovaLCT offers full grayscale (assumed: full-grayscale coefficients stored).
+    static func offersFullGrayscale(_ raw: Int) -> Bool { raw & 0x08 != 0 }
+
+    static func value(_ mode: Mode, keeping raw: Int) -> UInt8 { UInt8((raw & ~modeMask & 0xFF) | mode.rawValue) }
 
     static let modeRegister: UInt32 = 0x0200_0051
     static let switchRegister: UInt32 = 0x0100_00B3
@@ -34,13 +50,19 @@ nonisolated enum ScreenCalibration {
         return Int(v)
     }
 
-    /// Sets the mode on every card of `ports` (nil = all ports), the way NovaLCT does it.
+    /// Sets the mode on every card of `ports` (nil = all ports), the way NovaLCT does it:
+    /// read the byte of the first card, change only the mode bits, write it to all cards of the port.
     static func set(_ endpoint: NovaEndpoint, mode: Mode, ports: [Int]?) async throws {
-        let value = UInt8(mode.rawValue)
         let on: UInt8 = mode == .off ? 0x00 : 0x05
         try await NovaLink.run(endpoint, timeout: 2) { socket in
             for p in ports ?? [0xFF] {
                 let port = UInt8(p)
+                let current = (try? socket.transact(.read(modeRegister, length: 1, device: 1, port: p == 0xFF ? 0 : port, card: 0)))?
+                    .first.map(Int.init) ?? 0
+                if mode == .fullGrayscale, !offersFullGrayscale(current) {
+                    throw NovaLinkError.badResponse("The cards on this port do not offer full grayscale (no full-grayscale coefficients).")
+                }
+                let value = Self.value(mode, keeping: current)
                 if p == 0xFF {
                     try socket.transact(.write(modeRegister, [value], destination: 0xFF, device: 1, port: 0xFF, card: 0xFFFF))
                     try socket.transact(.write(switchRegister, [on], destination: 0xFF, device: 1, port: 0xFF, card: 0xFFFF))
@@ -73,6 +95,7 @@ struct CalibrationPage: View {
             calibrationBox
             if let screen = chosen.first {
                 SeamPanel(screen: screen, device: device).id(screen.id)
+                CoefficientsPanel(screen: screen, device: device).id(screen.id)
             }
             if let error { Text(error).foregroundStyle(.red).textSelection(.enabled) }
         }
@@ -176,20 +199,24 @@ struct CalibrationPage: View {
                     Text(status).font(.caption).foregroundStyle(.secondary)
                 }
                 Picker("", selection: Binding(get: { mode ?? .off }, set: { apply($0) })) {
-                    ForEach([ScreenCalibration.Mode.off, .brightness, .chroma]) { Text($0.title).tag($0) }
+                    ForEach(ScreenCalibration.Mode.allCases) { Text(LocalizedStringKey($0.title)).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(maxWidth: 420)
                 HStack {
-                    if let rawMode, ScreenCalibration.Mode(rawValue: rawMode) == nil {
+                    if let rawMode, ScreenCalibration.mode(of: rawMode) == nil {
                         Text(String(format: "Cards report mode 0x%02X (not one of the modes above).", rawMode))
                             .font(.caption).foregroundStyle(.orange)
                     }
                     Spacer()
                     Button("Read current") { readCurrent() }
                 }
-                Text("Takes effect immediately, not saved — a power cycle restores the stored setting. Full grayscale needs cards that store full-grayscale coefficients (not captured yet). Low grayscale and dark/bright lines come next.")
+                if let rawMode, !ScreenCalibration.offersFullGrayscale(rawMode) {
+                    Text("These cards do not offer Full grayscale (no full-grayscale coefficients stored).")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Text("Takes effect immediately, not saved — a power cycle restores the stored setting. Only the mode bits are changed; the cards' other settings in the same byte are kept.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .disabled(chosen.isEmpty)
@@ -214,7 +241,7 @@ struct CalibrationPage: View {
             error = failed.isEmpty ? nil : failed.joined(separator: "\n")
             if failed.count == jobs.count && !jobs.isEmpty { mode = previous }
             status = failed.isEmpty ? "\(newMode.title) on \(chosen.count) screen(s)" : "Not set everywhere"
-            rawMode = newMode.rawValue
+            readCurrent()
         }
     }
 
@@ -225,7 +252,7 @@ struct CalibrationPage: View {
             do {
                 let raw = try await ScreenCalibration.read(endpoint, port: port)
                 rawMode = raw
-                mode = ScreenCalibration.Mode(rawValue: raw)
+                mode = ScreenCalibration.mode(of: raw)
                 status = "\(screen.name): " + (mode?.title ?? String(format: "0x%02X", raw))
                 error = nil
             } catch { self.error = "Read: \(error.localizedDescription)" }

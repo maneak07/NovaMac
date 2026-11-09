@@ -451,7 +451,7 @@ extension RegisterInventory {
     /// Editable plan from the inventory (one cell per card, exact positions when known).
     @MainActor static func plan(_ cards: [Card], defaultSize: (width: Int, height: Int)) throws -> ScreenConnectionPlan {
         guard !cards.isEmpty else { throw RCFGXError.invalid("No receiving cards answer on any port.") }
-        guard cards.count <= 64 else { throw RCFGXError.invalid("More than 64 cards over USB are not supported yet (\(cards.count)).") }
+        guard cards.count <= 1024 else { throw RCFGXError.invalid("More than 1024 cards are not supported (\(cards.count)).") }
         if let grid = gridPlan(cards, defaultSize: defaultSize) { return grid }
         var plan = ScreenConnectionPlan()
         plan.columns = cards.count; plan.rows = 1
@@ -524,7 +524,8 @@ nonisolated enum ControllerModels {
     static func isVXPro(_ id: ID?) -> Bool { id.map { vxProFamilies.contains($0.family) || vxProFamilies.contains($0.hardware) } ?? false }
 
     /// Address of the sending card's area record for port `port` (0-based): flag, W, H, X, Y (u16).
-    /// MCTRL300 (captured): 0x02000050 + 9·p. VX Pro (captured): 0x02000050 + 0x13·p.
+    /// MCTRL300 (captured): 0x02000050 + 9·p.
+    /// VX Pro (NovaLCT Send of 20 ports on VX2000 Pro, 09.11.2026): see `vxBlockIndex` / `vxBlock`.
     /// MEE410 (register dump + NovaLCT read, 21.10.2026): units of 4 ports, 9 bytes each, at
     /// 0x02000050, 0x020000B0, 0x02000130, 0x02000154, 0x02010240, 0x02010264 (ports 1–4 … 21–24).
     static func portBlock(model: String?, port: Int) -> UInt32? {
@@ -534,9 +535,33 @@ nonisolated enum ControllerModels {
             guard port / 4 < units.count else { return nil }
             return units[port / 4] + 9 * UInt32(port % 4)
         }
-        // VX2000 Pro: assumed to share the VX1000 Pro map (same family); not captured yet.
-        if name == "VX1000PRO" || name == "VX2000PRO" { return 0x0200_0050 + 0x13 * UInt32(port) }
+        if name.hasPrefix("VX") && name.hasSuffix("PRO") { return vxBlock(port) }
         return port < 16 ? 0x0200_0050 + 9 * UInt32(port) : nil
+    }
+
+    /// VX Pro keeps the per-port area records (9 bytes: flag, W, H, X, Y) and card counts under a block index
+    /// that skips 8…15: ports 1–8 → 0–7, ports 9–20 → 16–27. The blocks come in units of 4 at
+    /// 0x02000050, 0x020000B0, 0x02000130, 0x02000154, 0x02010240 (block indexes 0, 4, 16, 20, 24).
+    /// Port records (0x03200000), 0x02030000, coordinate tables and the receiving cards use the plain port number.
+    /// Captured on VX2000 Pro (20 ports); VX1000 Pro ports 1 and 7 (the earlier captures) fit the same map.
+    static func vxBlockIndex(_ port: Int) -> Int { port < 8 ? port : port + 8 }
+    static func vxBlock(_ port: Int) -> UInt32? {
+        let units: [Int: UInt32] = [0: 0x0200_0050, 1: 0x0200_00B0, 4: 0x0200_0130, 5: 0x0200_0154, 6: 0x0201_0240]
+        let b = vxBlockIndex(port)
+        guard let unit = units[b / 4] else { return nil }
+        return unit + 9 * UInt32(b % 4)
+    }
+    /// Flag bytes NovaLCT clears first on VX Pro, one per port (VX2000 Pro: 20, VX1000 Pro: the first 10).
+    static func vxResets(portCount: Int) -> [UInt32] {
+        (0..<max(1, portCount)).compactMap { q -> UInt32? in
+            switch q {
+            case 0..<4: return 0x0200_0018 + UInt32(q)
+            case 4..<8: return 0x0200_0098 + UInt32(q - 4)
+            case 8..<16: return 0x0200_0100 + UInt32(q - 8)
+            case 16..<20: return 0x0201_0040 + UInt32(q - 16)
+            default: return nil
+            }
+        }
     }
 
     /// Protocol port numbers (0-based) in the order of the physical connectors, when they differ.

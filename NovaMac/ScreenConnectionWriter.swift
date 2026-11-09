@@ -33,12 +33,14 @@ enum ScreenConnectionWriter {
         /// 0-based ports the layout uses, ascending.
         var ports: [Int] { Array(Set(cards.map(\.port))).sorted() }
         var model: String? = nil   // for connector numbers in the summary (MEE410)
+        /// Short enough for the confirmation dialog: card count per port, not every card's position.
         var summary: String {
-            ports.map { p in
-                "Port \(ControllerModels.portLabel(model: model, index: p)): "
-                    + cards.filter { $0.port == p }.sorted { $0.chainIndex < $1.chainIndex }
-                        .map { "(\($0.x),\($0.y)) card \($0.chainIndex + 1)" }.joined(separator: " · ")
-            }.joined(separator: "\n")
+            let counts = ports.map { p in (ControllerModels.portLabel(model: model, index: p), cards.filter { $0.port == p }.count) }
+            let labels = counts.map { "\($0.0)" }.joined(separator: ", ")
+            if let first = counts.first?.1, counts.allSatisfy({ $0.1 == first }) {
+                return "\(cards.count) cards: \(counts.count) port(s) × \(first) (port \(labels))."
+            }
+            return "\(cards.count) cards — " + counts.map { "port \($0.0): \($0.1)" }.joined(separator: ", ") + "."
         }
     }
 
@@ -60,7 +62,7 @@ enum ScreenConnectionWriter {
         let ports = Set(connected.map(\.port)).sorted()
         guard let port = ports.first, ports.allSatisfy({ (1...32).contains($0) }) else { throw refuse("port outside 1…32.") }
         if ports.count > 1 {
-            warnings.append("\(ports.count) ports in one send: each port gets its own area (the box around its cards), as the controller stores it when NovaLCT sends — not captured from a NovaLCT send yet.")
+            warnings.append("\(ports.count) ports in one send: each port gets its own area (the box around its cards), as NovaLCT sends it (captured on VX2000 Pro and MEE410).")
         }
         for p in ports {
             let orders = connected.filter { $0.port == p }.compactMap(\.order)
@@ -179,12 +181,69 @@ enum ScreenConnectionWriter {
         return list
     }
 
+    /// Several ports on VX Pro — NovaLCT "Send to HW" on VX2000 Pro, 20 ports, 140 cards (09.11.2026):
+    /// clear the port flags, screen size, per port the area record (block index, see ControllerModels.vxBlock)
+    /// and card count, the port records 0x03200000 + 0x4000·p (twice: +0 and +0x10) with W, H, X, Y,
+    /// 0x02030000 + 2·p = 2, the coordinate tables (4 KB, positions relative to the port's area),
+    /// then the receiving cards' sizes.
+    static func vxMultiPortCommands(for layout: Layout) -> [NovaCommand] {
+        let w = layout.width, h = layout.height
+        let le16 = { (v: Int) in NovaBytes.le16(v) }
+        let portCount = max(10, ControllerModels.portCount(model: layout.model) ?? 10, (layout.ports.max() ?? 0) + 1)
+        var list: [NovaCommand] = []
+        for address in ControllerModels.vxResets(portCount: portCount) { list.append(.write(address, [0], destination: 0xFF)) }
+        for (address, data) in [(UInt32(0x0200_004A), [UInt8(0)]), (0x0200_00F0, [0]), (0x0200_0028, le16(0)), (0x0200_002A, le16(0)),
+                                (0x0200_0024, le16(w)), (0x0200_0026, le16(h)), (0x0200_002C, le16(w))] {
+            list.append(.write(address, data))
+        }
+        struct Area { let port: Int, x: Int, y: Int, w: Int, h: Int, cards: [Card] }
+        let areas: [Area] = layout.ports.map { port in
+            let cards = layout.cards.filter { $0.port == port }
+            let x0 = cards.map(\.x).min() ?? 0, y0 = cards.map(\.y).min() ?? 0
+            return Area(port: port, x: x0, y: y0,
+                        w: (cards.map { $0.x + $0.width }.max() ?? 0) - x0,
+                        h: (cards.map { $0.y + $0.height }.max() ?? 0) - y0, cards: cards)
+        }
+        for a in areas {
+            guard let block = ControllerModels.vxBlock(a.port) else { continue }
+            list.append(.write(block + 5, le16(a.x))); list.append(.write(block + 7, le16(a.y)))
+            list.append(.write(block + 1, le16(a.w))); list.append(.write(block + 3, le16(a.h)))
+            list.append(.write(0x0310_0000 + 0x20 * UInt32(ControllerModels.vxBlockIndex(a.port)), le16(a.cards.count)))
+            list.append(.write(block, [0]))
+        }
+        for a in areas {
+            let record = [UInt8(0)] + le16(a.w) + le16(a.h) + le16(a.x) + le16(a.y) + [UInt8](repeating: 0, count: 7)
+            list.append(.write(0x0320_0000 + 0x4000 * UInt32(a.port), record))
+            list.append(.write(0x0320_0010 + 0x4000 * UInt32(a.port), record))
+        }
+        for a in areas { list.append(.write(0x0203_0000 + 2 * UInt32(a.port), le16(2))) }
+        for a in areas {
+            let n = a.cards.count
+            let position = Dictionary(a.cards.map { ($0.chainIndex, UInt32($0.x - a.x) | UInt32($0.y - a.y) << 16) },
+                                      uniquingKeysWith: { first, _ in first })
+            var table: [UInt8] = []
+            table.reserveCapacity(4096)
+            for i in 0..<1024 { table += NovaBytes.le32(position[i % max(1, n)] ?? 0) }
+            list.append(.write(0x0300_0000 + 0x1000 * UInt32(a.port), table))
+        }
+        for a in areas { list.append(.write(0x0200_009A, [0], device: 1, port: UInt8(a.port), card: 0xFFFF)) }
+        for a in areas {
+            for card in a.cards {
+                list.append(.write(0x0200_0017, le16(card.width), device: 1, port: UInt8(a.port), card: UInt16(card.chainIndex)))
+                list.append(.write(0x0200_0019, le16(card.height), device: 1, port: UInt8(a.port), card: UInt16(card.chainIndex)))
+            }
+        }
+        list.append(.write(0x0100_0012, [0xAA], destination: 0xFF, device: 1, port: 0xFF, card: 0xFFFF, reserved: 0x08))
+        list.append(.write(0x0200_01EC, le16(w) + le16(h)))
+        list.append(.write(0x0200_00AE, [1], destination: 0xFF))
+        return list
+    }
+
     static func commands(for layout: Layout, profile: Profile = .vxPro) -> [NovaCommand] {
         let w = layout.width, h = layout.height, n = layout.cards.count
         var list: [NovaCommand] = []
         let resets: [UInt32] = profile == .vxPro
-            ? [0x0200_0018, 0x0200_0019, 0x0200_001A, 0x0200_001B, 0x0200_0098, 0x0200_0099,
-               0x0200_009A, 0x0200_009B, 0x0200_0100, 0x0200_0101]
+            ? ControllerModels.vxResets(portCount: max(10, ControllerModels.portCount(model: layout.model) ?? 10))
             : [0x0200_0018, 0x0200_0019]
         for address in resets { list.append(.write(address, [0], destination: 0xFF)) }
         let le16 = { (v: Int) in NovaBytes.le16(v) }
@@ -193,7 +252,10 @@ enum ScreenConnectionWriter {
         //   MCTRL300 (port 1 and port 2 captured): 0x02000050 + 9·p, no port record.
         //   Both: card count 0x03100000 + 0x20·p, coordinate table 0x03000000 + 0x1000·p.
         let p = UInt32(layout.portIndex)
-        let block: UInt32 = 0x0200_0050 + (profile == .vxPro ? 0x13 : 9) * p
+        let block: UInt32 = profile == .vxPro
+            ? (ControllerModels.vxBlock(layout.portIndex) ?? 0x0200_0050)
+            : 0x0200_0050 + 9 * p
+        let countIndex = UInt32(profile == .vxPro ? ControllerModels.vxBlockIndex(layout.portIndex) : layout.portIndex)
         var senderRegisters: [(UInt32, [UInt8])] = profile == .vxPro ? [(0x0200_004A, [0])] : []
         senderRegisters += [
             (0x0200_00F0, [0]),
@@ -202,7 +264,7 @@ enum ScreenConnectionWriter {
             (0x0200_002C, le16(w)),
             (block + 5, le16(0)), (block + 7, le16(0)),
             (block + 1, le16(w)), (block + 3, le16(h)),
-            (0x0310_0000 + 0x20 * p, le16(n)),
+            (0x0310_0000 + 0x20 * countIndex, le16(n)),
             (block, [0]),
         ]
         for (address, data) in senderRegisters { list.append(.write(address, data)) }
@@ -309,9 +371,15 @@ enum ScreenConnectionWriter {
     /// Several ports in one send (classic register map), verified by reading every port's area and table
     /// back and comparing the absolute card positions.
     static func sendRegistersMulti(_ endpoint: NovaEndpoint, layout target: Layout) async throws -> String {
-        let steps = multiPortCommands(for: target, model: target.model)
+        let classicSteps = multiPortCommands(for: target, model: target.model)
+        let vxSteps = vxMultiPortCommands(for: target)
         var blocks: [Int: UInt32] = [:]
-        for port in target.ports { blocks[port] = ControllerModels.portBlock(model: target.model, port: port) }
+        var vxBlocks: [Int: UInt32] = [:]
+        for port in target.ports {
+            blocks[port] = ControllerModels.portBlock(model: target.model, port: port)
+            vxBlocks[port] = ControllerModels.vxBlock(port)
+        }
+        let vxAreaBlocks = vxBlocks
         let areaBlocks = blocks
         // Plain values for the background task: port → [(chain index, x, y)].
         var expected: [Int: [[Int]]] = [:]
@@ -324,7 +392,8 @@ enum ScreenConnectionWriter {
             let id = try socket.transact(.read(0x0000_0002, length: 2))
             let family = id.count == 2 ? Int(id[0]) + Int(id[1]) * 256 : 0
             let profile = Profile.forModel(family)
-            guard profile == .classic else { return (profile, []) }
+            let steps = profile == .vxPro ? vxSteps : classicSteps
+            let useBlocks = profile == .vxPro ? vxAreaBlocks : areaBlocks
             for (k, command) in steps.enumerated() {
                 do { try socket.transact(command) } catch {
                     let message = String(format: "Step %d of %d: write 0x%08X port %d: ", k + 1, steps.count, command.address, Int(command.port))
@@ -335,7 +404,7 @@ enum ScreenConnectionWriter {
             // Read back: area origin + relative table = absolute position of every card.
             var wrong: [String] = []
             for (port, cards) in want.sorted(by: { $0.key < $1.key }) {
-                guard let block = areaBlocks[port],
+                guard let block = useBlocks[port],
                       let b = try? socket.transact(.read(block, length: 9)), b.count == 9 else { wrong.append("port \(label[port] ?? port + 1): area"); continue }
                 let ox = Int(b[5]) + Int(b[6]) * 256, oy = Int(b[7]) + Int(b[8]) * 256
                 let n = cards.count
@@ -351,9 +420,6 @@ enum ScreenConnectionWriter {
             }
             return (profile, wrong)
         }
-        guard result.0 == .classic else {
-            throw RCFGXError.invalid("Send to HW refused: over TCP 5200 a VX Pro takes one port per send — use the web interface (REST) mode for several ports.")
-        }
         let n = target.cards.count, ports = target.ports.count
         if result.1.isEmpty {
             return "Sent \(n) cards on \(ports) ports; read-back of all positions matches. Not saved — press Save to HW to keep it."
@@ -363,8 +429,7 @@ enum ScreenConnectionWriter {
 
     /// The NovaLCT register sequence only (VX Pro), without any read-back — used together with the web API send.
     static func sendRegistersOnly(ip: String, layout target: Layout) async throws {
-        guard target.ports.count == 1 else { throw RCFGXError.invalid("Register send: one port per send on VX Pro.") }
-        let sequence = Self.commands(for: target)
+        let sequence = target.ports.count == 1 ? Self.commands(for: target) : Self.vxMultiPortCommands(for: target)
         try await NovaLink.run(ip: ip) { socket in
             _ = try socket.transact(.read(0x0000_0002, length: 2))
             for (k, command) in sequence.enumerated() {
@@ -378,9 +443,7 @@ enum ScreenConnectionWriter {
 
     /// Sends the layout without saving, then reads the topology back through Unico and checks it.
     static func send(ip: String, layout target: Layout) async throws -> String {
-        guard target.ports.count == 1 else {
-            throw RCFGXError.invalid("Send to HW refused: over TCP 5200 a VX Pro takes one port per send — use the web interface (REST) mode for several ports.")
-        }
+        if target.ports.count > 1 { return try await sendRegistersMulti(.network(ip), layout: target) }
         let sequence = Self.commands(for: target)
         try await NovaLink.run(ip: ip) { socket in
             // Same first read NovaLCT does; proves the link before any write.

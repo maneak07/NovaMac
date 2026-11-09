@@ -12,16 +12,17 @@ final class ScreenDocument: ObservableObject, Identifiable {
 
     // Layout and the last reads (kept while switching screens/pages).
     @Published var plan = ScreenConnectionPlan.empty()
-    @Published var columns = 4
+    @Published var columns = 1
     @Published var rows = 1
     @Published var sender = 1
     @Published var port = 1
     @Published var width = 160
     @Published var height = 360
     @Published var zoom = 0.5
-    @Published var canvasPreset = 0
+    @Published var canvasPreset = 4             // "Custom": follows the box around the cards
     @Published var customWidth = 1920          // "Custom" area, set pixel by pixel
     @Published var customHeight = 1080
+    @Published var autoArea = true             // Custom area follows the cards until W/H is typed in
     @Published var hideDetails = false
     @Published var connecting = true
     @Published var gridStep = 40
@@ -53,6 +54,37 @@ final class ScreenWorkspace: ObservableObject {
     @Published var currentID: UUID?
 
     var current: ScreenDocument? { screens.first { $0.id == currentID } ?? screens.first }
+
+    /// Screen read over the register protocol (what NovaLCT writes and the LED screen shows).
+    /// nil when no receiving card answers.
+    private func registerDocument(_ endpoint: NovaEndpoint, device: NovaDevice) async -> ScreenDocument? {
+        await device.ensureModel(endpoint)
+        let model = device.models[endpoint.key]
+        let ports = ControllerModels.portCount(model: model) ?? 32
+        guard let cards = try? await RegisterInventory.read(endpoint, ports: ports, model: model), !cards.isEmpty,
+              let plan = try? RegisterInventory.plan(cards, defaultSize: (160, 360)) else { return nil }
+        let doc = ScreenDocument(number: 0, endpoint: endpoint)
+        doc.hardwareName = model ?? (endpoint.isUSB ? "USB sending card" : "sending card")
+        doc.plan = plan; doc.columns = plan.columns; doc.rows = plan.rows
+        if let p = plan.cells.first(where: { $0.order != nil })?.port { doc.port = p }
+        doc.usbCards = cards
+        doc.status = "Read from HW: \(cards.count) cards (register protocol)."
+        return doc
+    }
+
+    /// VX Pro: the web interface keeps its own copy of the layout, which NovaLCT (and NovaMac on several ports)
+    /// does not update. When the registers hold more cards than that copy, the register layout is the real one.
+    private func preferRegisters(over snapshots: [UnicoTopology.Snapshot], ip: String, device: NovaDevice) async -> ScreenDocument? {
+        guard let doc = await registerDocument(.network(ip), device: device) else { return nil }
+        let web = snapshots.map { $0.plan.cells.filter { $0.order != nil }.count }.max() ?? 0
+        let regs = doc.plan.cells.filter { $0.order != nil }.count
+        guard regs > web else { return nil }
+        doc.status = "Read from HW: \(regs) cards from the sending card's registers (the web interface's copy had \(web))."
+        return doc
+    }
+
+    /// No tab has any card yet (nothing the user could lose by reading from the hardware).
+    var isBlank: Bool { screens.allSatisfy { $0.plan.cells.isEmpty } }
 
     func ensureFirst(endpoint: NovaEndpoint) {
         guard screens.isEmpty else { return }
@@ -103,6 +135,11 @@ final class ScreenWorkspace: ObservableObject {
                 doc.usbCards = cards
                 doc.status = "Read from HW: \(cards.count) cards (register protocol)."
                 if found.count < Self.maxScreens { found.append(doc) }
+                continue
+            }
+            if let doc = await preferRegisters(over: snapshots, ip: ip, device: device), found.count < Self.maxScreens {
+                doc.number = found.count + 1
+                found.append(doc)
                 continue
             }
             for snapshot in snapshots where found.count < Self.maxScreens {
@@ -156,7 +193,10 @@ final class ScreenWorkspace: ObservableObject {
             }
             target = .usb(path: path, baud: id.baud)
         }
-        if case .network(let ip) = target, let snapshots = try? await UnicoTopology.readAllScreens(ip: ip) {
+        if case .network(let ip) = target, let snapshots = try? await UnicoTopology.readAllScreens(ip: ip),
+           let doc = await preferRegisters(over: snapshots, ip: ip, device: device) {
+            found.append(doc)
+        } else if case .network(let ip) = target, let snapshots = try? await UnicoTopology.readAllScreens(ip: ip) {
             for snapshot in snapshots {
                 let doc = ScreenDocument(number: 0, endpoint: target)
                 doc.hardware = snapshot
@@ -246,7 +286,13 @@ struct ScreenWorkspaceView: View {
             if workspace.screens.isEmpty {
                 workspace.ensureFirst(endpoint: device.selection)
                 Task { await workspace.readAll(device: device) }
+            } else if workspace.isBlank, !workspace.reading {
+                Task { await workspace.readAll(device: device) }
             }
+        }
+        .onChange(of: device.connected) { _, _ in
+            // A controller was connected while the tabs are still empty: show its real screen.
+            if workspace.isBlank, !workspace.reading { Task { await workspace.readAll(device: device) } }
         }
         .alert("Read all screens from the hardware?", isPresented: $confirmReadAll) {
             Button("Read") { Task { await workspace.readAll(device: device) } }

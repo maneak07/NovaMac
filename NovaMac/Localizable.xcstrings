@@ -7,134 +7,6 @@
     " " : {
 
     },
-    "Find controllers" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найти контроллеры"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查找控制器"
-          }
-        }
-      }
-    },
-    "Found %lld controller(s), %lld new." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Найдено контроллеров: %lld, новых: %lld."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找到 %lld 个控制器，其中 %lld 个为新增。"
-          }
-        }
-      }
-    },
-    "No controllers found on %@." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В сети %@ контроллеры не найдены."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 %@ 上未找到控制器。"
-          }
-        }
-      }
-    },
-    "No controllers yet. Click Find controllers, add an IP below or connect a USB sending card." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Контроллеров пока нет. Нажмите «Найти контроллеры», добавьте IP ниже или подключите USB-карту."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尚无控制器。点击“查找控制器”，在下方添加 IP，或连接 USB 发送卡。"
-          }
-        }
-      }
-    },
-    "No network with an IPv4 address. Connect the Mac to the controller's network." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет сети с IPv4-адресом. Подключите Mac к сети контроллера."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有带 IPv4 地址的网络。请将 Mac 连接到控制器所在网络。"
-          }
-        }
-      }
-    },
-    "Port 5200 open but no answer: %@ (busy with another program?)." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Порт 5200 открыт, но нет ответа: %@ (занят другой программой?)."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "端口 5200 已打开但无响应：%@（是否被其他程序占用？）。"
-          }
-        }
-      }
-    },
-    "Search the Mac's local networks for NovaStar controllers (TCP 5200) and add them to the list." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Искать контроллеры NovaStar в локальных сетях Mac (TCP 5200) и добавить их в список."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Mac 的本地网络中搜索 NovaStar 控制器（TCP 5200）并添加到列表。"
-          }
-        }
-      }
-    },
-    "Searching the local network…" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поиск в локальной сети…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在搜索本地网络…"
-          }
-        }
-      }
-    },
     "—" : {
 
     },
@@ -377,6 +249,22 @@
         }
       }
     },
+    "%lld of %lld cabinets selected" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрано кабинетов: %1$lld из %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选择 %1$lld / %2$lld 个箱体"
+          }
+        }
+      }
+    },
     "%lld px" : {
       "localizations" : {
         "ru" : {
@@ -453,6 +341,9 @@
         }
       }
     },
+    "4K UHD 3840 × 2160" : {
+
+    },
     "5 s" : {
       "localizations" : {
         "ru" : {
@@ -501,6 +392,9 @@
         }
       }
     },
+    "3840 × 1920" : {
+
+    },
     "Active" : {
       "localizations" : {
         "ru" : {
@@ -533,6 +427,22 @@
         }
       }
     },
+    "Add card" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить карту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加卡"
+          }
+        }
+      }
+    },
     "Add controller IP, e.g. 192.168.0.20" : {
       "localizations" : {
         "ru" : {
@@ -561,6 +471,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加屏幕"
+          }
+        }
+      }
+    },
+    "Adds a card of the Width × Height above next to the selected card (or at the right edge). Then type its Card X / Card Y." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляет карту размера Ш × В (поля выше) рядом с выбранной картой (или у правого края). Затем задайте её Card X / Card Y."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在所选卡旁边（或最右侧）添加一张上方宽 × 高尺寸的卡，然后输入其 Card X / Card Y。"
           }
         }
       }
@@ -811,6 +737,71 @@
         }
       }
     },
+    "Area = the box around all cards, and it keeps following them." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область = рамка вокруг всех карт; дальше следует за ними."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域 = 包围所有接收卡的框，并持续跟随。"
+          }
+        }
+      }
+    },
+    "Area = the box around all cards." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область = прямоугольник вокруг всех карт."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域 = 包围所有卡的矩形。"
+          }
+        }
+      }
+    },
+    "Area H" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область В"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域高"
+          }
+        }
+      }
+    },
+    "Area W" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область Ш"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域宽"
+          }
+        }
+      }
+    },
     "Auto" : {
       "localizations" : {
         "ru" : {
@@ -839,6 +830,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自动刷新（5 秒）"
+          }
+        }
+      }
+    },
+    "Auto upload module coefficients" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автозагрузка коэффициентов модулей"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动上传模组系数"
           }
         }
       }
@@ -1131,6 +1138,22 @@
         }
       }
     },
+    "Calibration coefficients — %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Калибровочные коэффициенты — %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "校正系数 — %@"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "localizations" : {
         "ru" : {
@@ -1192,6 +1215,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "接收卡"
+          }
+        }
+      }
+    },
+    "Cards load the coefficients from their modules by themselves (NovaLCT: Auto Upload Module Coefficients). Read from the first cabinet; written to every card." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карты сами загружают коэффициенты из модулей (NovaLCT: Auto Upload Module Coefficients). Состояние читается с первого кабинета, записывается во все карты."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收卡自行从模组加载系数（NovaLCT：自动上传模组系数）。状态从第一个箱体读取，写入所有接收卡。"
+          }
+        }
+      }
+    },
+    "Cards report mode 0x%02X (not one of the modes above)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карты сообщают режим 0x%02X (не из списка выше)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收卡报告的模式为 0x%02X（不在上述模式中）。"
+          }
+        }
+      }
+    },
+    "Chroma" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цветность"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色度"
+          }
+        }
+      }
+    },
+    "Click a cabinet to select it, drag across the map to select several. The coefficients are loaded inside the cards (nothing is copied to the Mac) and are not stored until they are saved to the cards." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щёлкните кабинет, чтобы выбрать его, или проведите мышью по карте, чтобы выбрать несколько. Коэффициенты загружаются внутри карт (на Mac ничего не копируется) и не сохраняются, пока их не сохранить в карты."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单击箱体进行选择，在图上拖动可选择多个。系数在接收卡内部加载（不会复制到 Mac），保存到接收卡之前不会被存储。"
           }
         }
       }
@@ -1533,6 +1620,22 @@
         }
       }
     },
+    "Connecting…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在连接…"
+          }
+        }
+      }
+    },
     "Contrast: not a receiving-card setting on MCTRL300 (NovaLCT has none)." : {
       "localizations" : {
         "ru" : {
@@ -1813,6 +1916,38 @@
         }
       }
     },
+    "Custom %lld × %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Своя %1$lld × %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自定义 %1$lld × %2$lld"
+          }
+        }
+      }
+    },
+    "Custom…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свой размер…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自定义…"
+          }
+        }
+      }
+    },
     "Dark" : {
       "localizations" : {
         "ru" : {
@@ -1862,6 +1997,9 @@
         }
       }
     },
+    "DCI 4K 4096 × 2160" : {
+
+    },
     "DCLK duty  %lld %%" : {
       "localizations" : {
         "ru" : {
@@ -1890,6 +2028,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DCLK 相位  %lld"
+          }
+        }
+      }
+    },
+    "Delete card" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить карту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除卡"
           }
         }
       }
@@ -1987,6 +2141,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关闭测试图、冻结和黑场过渡"
+          }
+        }
+      }
+    },
+    "Disabled" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключено"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
           }
         }
       }
@@ -2115,6 +2285,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每次读取使用端口 5200 上的临时 TCP 连接。"
+          }
+        }
+      }
+    },
+    "Each selected card loads the coefficients stored in it (NovaLCT: Manage Coefficients)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждая выбранная карта загружает записанные в ней коэффициенты (NovaLCT: Manage Coefficients)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张所选接收卡加载其中存储的系数（NovaLCT：系数管理）。"
+          }
+        }
+      }
+    },
+    "Each selected card loads the coefficients stored in its modules' flash." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждая выбранная карта загружает коэффициенты из флеш-памяти своих модулей."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张所选接收卡加载其模组闪存中存储的系数。"
+          }
+        }
+      }
+    },
+    "Each selected card stores its working coefficients in its own flash (NovaLCT: Save Calibration Coefficients)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждая выбранная карта записывает рабочие коэффициенты в свою флеш-память (NovaLCT: Save Calibration Coefficients)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张所选接收卡将当前系数存入自身闪存（NovaLCT：保存校正系数）。"
           }
         }
       }
@@ -2279,6 +2497,38 @@
         }
       }
     },
+    "Every receiving card on %@ stores its current parameters in flash." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все приёмные карты на %@ запишут текущие параметры во флеш-память."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 上的所有接收卡将当前参数存入闪存。"
+          }
+        }
+      }
+    },
+    "Every receiving card on the controller stores its parameters (NovaLCT: Save to HW)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все приёмные карты контроллера сохраняют свои параметры (NovaLCT: Save to HW)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制器上的所有接收卡保存其参数（NovaLCT：保存到硬件）。"
+          }
+        }
+      }
+    },
     "Export RCFGX…" : {
       "localizations" : {
         "ru" : {
@@ -2311,6 +2561,22 @@
         }
       }
     },
+    "Find controllers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти контроллеры"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查找控制器"
+          }
+        }
+      }
+    },
     "Firmware %@" : {
       "localizations" : {
         "ru" : {
@@ -2327,6 +2593,38 @@
         }
       }
     },
+    "Fit to cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По картам"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "适应卡片"
+          }
+        }
+      }
+    },
+    "follows the cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "следует за картами"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随接收卡"
+          }
+        }
+      }
+    },
     "For Claude Desktop and other MCP clients use nova_mcp.py from the project folder (see AGENT-API.md)." : {
       "localizations" : {
         "ru" : {
@@ -2339,6 +2637,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Desktop 及其他 MCP 客户端请使用项目文件夹中的 nova_mcp.py（见 AGENT-API.md）。"
+          }
+        }
+      }
+    },
+    "Found %lld controller(s), %lld new." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найдено контроллеров: %lld, новых: %lld."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找到 %lld 个控制器，其中 %lld 个为新增。"
           }
         }
       }
@@ -2406,6 +2720,25 @@
           }
         }
       }
+    },
+    "Full grayscale" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полная шкала серого"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全灰度"
+          }
+        }
+      }
+    },
+    "Full HD 1920 × 1080" : {
+
     },
     "Gamma" : {
       "localizations" : {
@@ -3337,6 +3670,22 @@
         }
       }
     },
+    "No cards yet. Connect a controller on the Dashboard and its screen is read automatically, or set Columns × Rows and press Configure." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карт пока нет. Подключите контроллер на Панели — его экран прочитается автоматически, или задайте столбцы × строки и нажмите «Настроить»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有接收卡。在仪表板上连接控制器后会自动读取其屏幕，或设置列 × 行并点击“配置”。"
+          }
+        }
+      }
+    },
     "No configuration open" : {
       "localizations" : {
         "ru" : {
@@ -3353,6 +3702,54 @@
         }
       }
     },
+    "No connection" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет связи"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无连接"
+          }
+        }
+      }
+    },
+    "No controllers found on %@." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В сети %@ контроллеры не найдены."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %@ 上未找到控制器。"
+          }
+        }
+      }
+    },
+    "No controllers yet. Click Find controllers, add an IP below or connect a USB sending card." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Контроллеров пока нет. Нажмите «Найти контроллеры», добавьте IP ниже или подключите USB-карту."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无控制器。点击“查找控制器”，在下方添加 IP，或连接 USB 发送卡。"
+          }
+        }
+      }
+    },
     "No input reports a signal (register 0x13010001)." : {
       "localizations" : {
         "ru" : {
@@ -3365,6 +3762,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有输入报告信号（寄存器 0x13010001）。"
+          }
+        }
+      }
+    },
+    "No mapped cabinets on this screen. Read the screen from the hardware on Screen Connection first." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этом экране нет подключённых кабинетов. Сначала прочитайте экран с оборудования на странице Screen Connection."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此屏幕没有已映射的箱体。请先在“屏幕连接”页面从硬件读取屏幕。"
+          }
+        }
+      }
+    },
+    "No network with an IPv4 address. Connect the Mac to the controller's network." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет сети с IPv4-адресом. Подключите Mac к сети контроллера."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有带 IPv4 地址的网络。请将 Mac 连接到控制器所在网络。"
           }
         }
       }
@@ -3509,6 +3938,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无响应"
+          }
+        }
+      }
+    },
+    "Not available yet: needs a NovaLCT capture of saving the coefficients to the cards." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока недоступно: нужен захват сохранения коэффициентов в карты из NovaLCT."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂不可用：需要抓取 NovaLCT 将系数保存到接收卡的数据包。"
           }
         }
       }
@@ -3822,6 +4268,9 @@
         }
       }
     },
+    "P%lld" : {
+
+    },
     "P%lld-%lld" : {
       "localizations" : {
         "en" : {
@@ -4000,6 +4449,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "网口 %lld · 卡 %lld · %@%@"
+          }
+        }
+      }
+    },
+    "Port 5200 open but no answer: %@ (busy with another program?)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Порт 5200 открыт, но нет ответа: %@ (занят другой программой?)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端口 5200 已打开但无响应：%@（是否被其他程序占用？）。"
           }
         }
       }
@@ -4289,6 +4754,22 @@
         }
       }
     },
+    "Read coefficients from the modules?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Считать коэффициенты с модулей?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从模组读取系数？"
+          }
+        }
+      }
+    },
     "Read current" : {
       "localizations" : {
         "ru" : {
@@ -4333,6 +4814,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "从硬件读取"
+          }
+        }
+      }
+    },
+    "Read from modules" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Считать с модулей"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从模组读取"
+          }
+        }
+      }
+    },
+    "Read from receiving cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Считать с приёмных карт"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从接收卡读取"
           }
         }
       }
@@ -4835,6 +5348,22 @@
         }
       }
     },
+    "Removes the selected card from the screen (⌘⌫). The other cards stay where they are; Undo brings it back." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удаляет выбранную карту с экрана (⌘⌫). Остальные карты остаются на местах; Undo вернёт её."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从屏幕上删除所选卡（⌘⌫）。其他卡位置不变；撤销可恢复。"
+          }
+        }
+      }
+    },
     "Requests" : {
       "localizations" : {
         "ru" : {
@@ -5097,6 +5626,22 @@
         }
       }
     },
+    "Save to cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить в карты"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存到接收卡"
+          }
+        }
+      }
+    },
     "Save to cards…" : {
       "localizations" : {
         "ru" : {
@@ -5141,6 +5686,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保存到硬件"
+          }
+        }
+      }
+    },
+    "Save to HW?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить в оборудование?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存到硬件？"
           }
         }
       }
@@ -5375,6 +5936,38 @@
         }
       }
     },
+    "Search the Mac's local networks for NovaStar controllers (TCP 5200) and add them to the list." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать контроллеры NovaStar в локальных сетях Mac (TCP 5200) и добавить их в список."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Mac 的本地网络中搜索 NovaStar 控制器（TCP 5200）并添加到列表。"
+          }
+        }
+      }
+    },
+    "Searching the local network…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск в локальной сети…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在搜索本地网络…"
+          }
+        }
+      }
+    },
     "Select a test pattern, or Normal to return to the input image." : {
       "localizations" : {
         "ru" : {
@@ -5387,6 +5980,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择测试图，或选择“正常”返回输入画面。"
+          }
+        }
+      }
+    },
+    "Select all" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать все"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全选"
           }
         }
       }
@@ -5788,6 +6397,22 @@
         }
       }
     },
+    "state not read" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "состояние не прочитано"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态未读取"
+          }
+        }
+      }
+    },
     "Status" : {
       "localizations" : {
         "ru" : {
@@ -5816,6 +6441,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本次会话记录的状态变化。"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стоп"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止"
           }
         }
       }
@@ -5869,6 +6510,7 @@
       }
     },
     "Takes effect immediately, not saved — a power cycle restores the stored setting. Full grayscale needs cards that store full-grayscale coefficients (not captured yet). Low grayscale and dark/bright lines come next." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ru" : {
           "stringUnit" : {
@@ -5880,6 +6522,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即生效，不保存——断电后恢复已存设置。全灰度需要存有全灰度系数的卡（尚未抓包）。低灰与暗/亮线随后实现。"
+          }
+        }
+      }
+    },
+    "Takes effect immediately, not saved — a power cycle restores the stored setting. Only the mode bits are changed; the cards' other settings in the same byte are kept." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действует сразу и не сохраняется — после выключения питания вернётся сохранённая настройка. Меняются только биты режима, остальные настройки карт в этом байте сохраняются."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即生效，不保存——断电后恢复已存设置。只修改模式位，同一字节中接收卡的其他设置保持不变。"
           }
         }
       }
@@ -5996,6 +6654,22 @@
         }
       }
     },
+    "The controller does not answer. Click to stop polling it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Контроллер не отвечает. Нажмите, чтобы прекратить опрос."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制器无响应。单击停止轮询。"
+          }
+        }
+      }
+    },
     "The controller moves to %@. It must stay reachable from this Mac (same subnet), or it will disappear until the Mac's network matches." : {
       "localizations" : {
         "ru" : {
@@ -6044,6 +6718,22 @@
         }
       }
     },
+    "The selected cards replace their working coefficients with the ones stored in the modules. Nothing is saved to the cards until you save." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранные карты заменят рабочие коэффициенты теми, что записаны в модулях. В карты ничего не сохраняется, пока вы не сохраните."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选接收卡将用模组中存储的系数替换当前工作系数。在保存之前不会写入接收卡。"
+          }
+        }
+      }
+    },
     "The tabs are replaced by the screens found on the controllers. Unsent changes in the tabs are lost." : {
       "localizations" : {
         "ru" : {
@@ -6056,6 +6746,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "标签页将替换为控制器上找到的屏幕。标签页中未发送的更改将丢失。"
+          }
+        }
+      }
+    },
+    "These cards do not offer Full grayscale (no full-grayscale coefficients stored)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эти карты не поддерживают полную шкалу серого (коэффициенты не записаны)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些接收卡不支持全灰度（未存储全灰度系数）。"
+          }
+        }
+      }
+    },
+    "To make the input resolution match, press \"Use area\" in the EDID box above, then Apply." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы входное разрешение совпало, нажмите «Use area» в блоке EDID выше, затем Apply."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要使输入分辨率一致，请在上方 EDID 框中点击“Use area”，然后点击 Apply。"
           }
         }
       }
@@ -6206,6 +6928,22 @@
     },
     "USB" : {
 
+    },
+    "Use area %lld × %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Взять область %lld × %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用区域 %lld × %lld"
+          }
+        }
+      }
     },
     "User" : {
       "localizations" : {
@@ -6401,242 +7139,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缩放"
-          }
-        }
-      }
-    },
-    "Add card" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить карту"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加卡"
-          }
-        }
-      }
-    },
-    "Delete card" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить карту"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除卡"
-          }
-        }
-      }
-    },
-    "Adds a card of the Width × Height above next to the selected card (or at the right edge). Then type its Card X / Card Y." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавляет карту размера Ш × В (поля выше) рядом с выбранной картой (или у правого края). Затем задайте её Card X / Card Y."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在所选卡旁边（或最右侧）添加一张上方宽 × 高尺寸的卡，然后输入其 Card X / Card Y。"
-          }
-        }
-      }
-    },
-    "Removes the selected card from the screen (⌘⌫). The other cards stay where they are; Undo brings it back." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удаляет выбранную карту с экрана (⌘⌫). Остальные карты остаются на местах; Undo вернёт её."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从屏幕上删除所选卡（⌘⌫）。其他卡位置不变；撤销可恢复。"
-          }
-        }
-      }
-    },
-    "Custom…" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Свой размер…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自定义…"
-          }
-        }
-      }
-    },
-    "Area W" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Область Ш"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "区域宽"
-          }
-        }
-      }
-    },
-    "Area H" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Область В"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "区域高"
-          }
-        }
-      }
-    },
-    "Fit to cards" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "По картам"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "适应卡片"
-          }
-        }
-      }
-    },
-    "Area = the box around all cards." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Область = прямоугольник вокруг всех карт."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "区域 = 包围所有卡的矩形。"
-          }
-        }
-      }
-    },
-    "To make the input resolution match, press \"Use area\" in the EDID box above, then Apply." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтобы входное разрешение совпало, нажмите «Use area» в блоке EDID выше, затем Apply."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要使输入分辨率一致，请在上方 EDID 框中点击“Use area”，然后点击 Apply。"
-          }
-        }
-      }
-    },
-    "Use area %lld × %lld" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Взять область %lld × %lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用区域 %lld × %lld"
-          }
-        }
-      }
-    },
-    "4K UHD 3840 × 2160" : {
-
-    },
-    "DCI 4K 4096 × 2160" : {
-
-    },
-    "3840 × 1920" : {
-
-    },
-    "Full HD 1920 × 1080" : {
-
-    },
-    "No connection" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет связи"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无连接"
-          }
-        }
-      }
-    },
-    "Connecting…" : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключение…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在连接…"
-          }
-        }
-      }
-    },
-    "The controller does not answer. Click to stop polling it." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Контроллер не отвечает. Нажмите, чтобы прекратить опрос."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "控制器无响应。单击停止轮询。"
           }
         }
       }

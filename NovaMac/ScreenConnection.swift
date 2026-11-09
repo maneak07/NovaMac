@@ -24,9 +24,11 @@ struct ScreenConnectionPlan: Codable, Equatable {
         // From Read from HW: the controller keeps this cabinet in its layout but the card is not answering.
         var offline: Bool? = nil
     }
+    /// A new screen starts with no cards: the real layout is read from the controller,
+    /// or the user builds one with Columns × Rows → Configure / Add card.
     static func empty() -> Self {
         var plan = Self()
-        plan.cells = (0..<4).map { Cell(id: $0) }
+        plan.columns = 1; plan.rows = 1
         return plan
     }
     func validate() throws {

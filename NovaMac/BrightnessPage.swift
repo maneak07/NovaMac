@@ -122,11 +122,11 @@ struct BrightnessPage: View {
         return (p.count == 1 ? "port " : "ports ") + p.map { String(ControllerModels.portLabel(model: model, index: $0)) }.joined(separator: ", ")
     }
 
-    /// Controllers for the register test patterns (MCTRL…; VX Pro uses its web interface below):
-    /// the chosen screens' controllers, or the selected controller when no screen is chosen.
+    /// Controllers for the register test patterns: the chosen screens' controllers, or the selected controller
+    /// when no screen is chosen. The patterns are made by the receiving cards, so VX Pro gets them too
+    /// (its web-interface patterns did nothing on the VX2000 Pro object, 09.11.2026).
     private var testTargets: [(NovaEndpoint, [Int]?)] {
-        let list: [(NovaEndpoint, [Int]?)] = targets.isEmpty ? [(device.selection, nil)] : targets
-        return list.filter { !(device.models[$0.0.key]?.uppercased().hasPrefix("VX") ?? false) }
+        targets.isEmpty ? [(device.selection, nil)] : targets
     }
 
     /// Controllers to address and their ports. A controller whose every screen is chosen gets one broadcast;

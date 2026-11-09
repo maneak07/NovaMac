@@ -236,6 +236,8 @@ struct ScreenConnectionView: View {
             do { _ = try result.get(); status = "Connection plan saved."; error = nil }
             catch { self.error = error.localizedDescription }
         }
+        .onAppear { fitAreaIfAuto() }
+        .onChange(of: plan) { _, _ in fitAreaIfAuto() }
         .onChange(of: endpoint.key) { _, _ in
             cards = []; usbCards = []; answering = [:]; hardware = nil; activePorts = []; mappingOn = nil; error = nil
             status = "Controller changed to \(endpoint.label). The local plan has not been applied."
@@ -342,18 +344,29 @@ struct ScreenConnectionView: View {
             GroupBox("Placement") {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Area", selection: $screen.canvasPreset) {
-                        ForEach(canvasPresets.indices, id: \.self) { Text(LocalizedStringKey(canvasPresets[$0].name)).tag($0) }
+                        ForEach(canvasPresets.indices, id: \.self) { i in
+                            if i == canvasPresets.count - 1 {
+                                Text("Custom \(screen.customWidth) × \(screen.customHeight)").tag(i)
+                            } else {
+                                Text(LocalizedStringKey(canvasPresets[i].name)).tag(i)
+                            }
+                        }
+                    }
+                    .onChange(of: screen.canvasPreset) { _, _ in
+                        if isCustomArea { screen.autoArea = true; fitAreaIfAuto() }
                     }
                     if isCustomArea {
                         HStack {
-                            number("Area W", value: $screen.customWidth, range: 1...16384)
-                            number("Area H", value: $screen.customHeight, range: 1...16384)
+                            number("Area W", value: manualArea(\.customWidth), range: 1...16384)
+                            number("Area H", value: manualArea(\.customHeight), range: 1...16384)
                         }
-                        Button("Fit to cards") {
-                            let b = plan.pixelBounds
-                            screen.customWidth = max(1, b.width); screen.customHeight = max(1, b.height)
+                        HStack {
+                            Button("Fit to cards") { screen.autoArea = true; fitAreaIfAuto() }
+                                .help("Area = the box around all cards, and it keeps following them.")
+                            if screen.autoArea {
+                                Text("follows the cards").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
-                        .help("Area = the box around all cards.")
                         if (device.models[endpoint.key] ?? "").uppercased().hasPrefix("MCTRL") {
                             Text("To make the input resolution match, press \"Use area\" in the EDID box above, then Apply.")
                                 .font(.caption).foregroundStyle(.secondary)
@@ -395,6 +408,14 @@ struct ScreenConnectionView: View {
 
     /// Points per screen pixel.
     private var scale: CGFloat { 0.5 * zoom }
+
+    /// Height of the work field: the whole area fits without scrolling up to the default 50 % zoom;
+    /// when zoomed in further, the field keeps that height and scrolls inside.
+    private func fieldHeight(_ extentH: CGFloat) -> CGFloat {
+        let content = extentH * scale + rulerSize + 2
+        let atDefaultZoom = extentH * 0.25 + rulerSize + 2
+        return max(220, min(content, atDefaultZoom))
+    }
     private let rulerSize: CGFloat = 24
 
     private var canvas: some View {
@@ -432,8 +453,20 @@ struct ScreenConnectionView: View {
                     }
                 }
             }
-            .frame(height: 460)
+            .frame(height: fieldHeight(extentH))
             .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                if plan.cells.isEmpty {
+                    Text("No cards yet. Connect a controller on the Dashboard and its screen is read automatically, or set Columns × Rows and press Configure.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 420)
+                        .padding(14)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                        .allowsHitTesting(false)
+                }
+            }
             HStack(spacing: 14) {
                 Text("Screen \(bounds.width) × \(bounds.height) px of \(limit.width) × \(limit.height)")
                 if let hover { Text("Cursor x \(hover.0)  y \(hover.1)") }
@@ -453,7 +486,9 @@ struct ScreenConnectionView: View {
 
     private func cabinetView(_ cell: ScreenConnectionPlan.Cell, rect r: PixelRect, scale s: CGFloat, overlapping: Bool) -> some View {
         let isSelected = selected == cell.id
-        let fill: Color = cell.blank ? .black : overlapping ? .red.opacity(0.4) : .blue.opacity(0.32)
+        // Connected cards take their port's colour (same as the cable arrows); unconnected ones stay neutral.
+        let fill: Color = cell.blank ? .black : overlapping ? .red.opacity(0.4)
+            : cell.order != nil ? Self.portColor(cell.port).opacity(0.38) : Color.gray.opacity(0.22)
         return ZStack {
             Rectangle().fill(fill)
             if cell.blank {
@@ -547,23 +582,52 @@ struct ScreenConnectionView: View {
     }
 
     /// Cable order arrows between card centres, per sender/port.
+    /// One distinct colour per port (1-based), evenly spread around the hue circle.
+    static func portColor(_ port: Int) -> Color {
+        let hue = (Double(max(port, 1) - 1) * 0.618_033_988_75).truncatingRemainder(dividingBy: 1)
+        return Color(hue: hue, saturation: 0.85, brightness: 0.95)
+    }
+
     private func cableLayer(rects: [Int: PixelRect], scale s: CGFloat) -> some View {
         Canvas { context, _ in
             let groups = Dictionary(grouping: plan.cells.filter { $0.order != nil && !$0.blank }, by: { "\($0.sender)/\($0.port)" })
             for group in groups.values {
                 let sorted = group.sorted { $0.order! < $1.order! }
+                guard let first = sorted.first else { continue }
+                let color = Self.portColor(first.port)
+                func anchor(_ r: PixelRect) -> CGPoint {
+                    CGPoint(x: (CGFloat(r.x) + CGFloat(r.width) / 2) * s, y: (CGFloat(r.y) + CGFloat(r.height) / 2) * s)
+                }
                 for (a, b) in zip(sorted, sorted.dropFirst()) {
                     guard let ra = rects[a.id], let rb = rects[b.id] else { continue }
-                    let start = CGPoint(x: (CGFloat(ra.x) + CGFloat(ra.width) / 2) * s, y: (CGFloat(ra.y) + CGFloat(ra.height) * 0.8) * s)
-                    let end = CGPoint(x: (CGFloat(rb.x) + CGFloat(rb.width) / 2) * s, y: (CGFloat(rb.y) + CGFloat(rb.height) * 0.8) * s)
-                    var path = Path(); path.move(to: start); path.addLine(to: end)
+                    let start = anchor(ra), end = anchor(rb)
                     let angle = atan2(end.y - start.y, end.x - start.x)
-                    for delta in [-0.5, 0.5] {
-                        path.move(to: end)
-                        path.addLine(to: CGPoint(x: end.x - 10 * cos(angle + delta), y: end.y - 10 * sin(angle + delta)))
-                    }
-                    context.stroke(path, with: .color(.green), lineWidth: 2)
+                    let head: CGFloat = 13
+                    // Line stops at the base of the arrow head; a dark outline keeps it readable on any fill.
+                    let base = CGPoint(x: end.x - head * 0.8 * cos(angle), y: end.y - head * 0.8 * sin(angle))
+                    var line = Path(); line.move(to: start); line.addLine(to: base)
+                    var tip = Path()
+                    tip.move(to: end)
+                    tip.addLine(to: CGPoint(x: end.x - head * cos(angle - 0.42), y: end.y - head * sin(angle - 0.42)))
+                    tip.addLine(to: CGPoint(x: end.x - head * cos(angle + 0.42), y: end.y - head * sin(angle + 0.42)))
+                    tip.closeSubpath()
+                    context.stroke(line, with: .color(.black.opacity(0.55)), style: StrokeStyle(lineWidth: 5.5, lineCap: .round))
+                    context.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    context.stroke(tip, with: .color(.black.opacity(0.55)), style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
+                    context.fill(tip, with: .color(color))
                 }
+                // Port label under the start of the chain (the first card).
+                guard let r0 = rects[first.id] else { continue }
+                let p0 = anchor(r0)
+                let label = context.resolve(Text("P\(portName(first.port))").font(.system(size: 11, weight: .bold)).foregroundColor(.white))
+                let size = label.measure(in: CGSize(width: 200, height: 40))
+                let chip = CGRect(x: p0.x - size.width / 2 - 5, y: p0.y + 6, width: size.width + 10, height: size.height + 4)
+                context.fill(Path(roundedRect: chip, cornerRadius: 5), with: .color(color))
+                context.stroke(Path(roundedRect: chip, cornerRadius: 5), with: .color(.black.opacity(0.5)), lineWidth: 1)
+                context.draw(label, at: CGPoint(x: chip.midX, y: chip.midY))
+                var dot = Path(); dot.addEllipse(in: CGRect(x: p0.x - 4, y: p0.y - 4, width: 8, height: 8))
+                context.fill(dot, with: .color(color))
+                context.stroke(dot, with: .color(.black.opacity(0.55)), lineWidth: 1)
             }
         }
     }
@@ -604,6 +668,21 @@ struct ScreenConnectionView: View {
                 let r = plan.rects.values
                 status = "Layout moved to X \(r.map(\.x).min() ?? 0), Y \(r.map(\.y).min() ?? 0)."
             })
+    }
+
+    /// Custom area = the box around the cards, as long as the user has not typed a size.
+    private func fitAreaIfAuto() {
+        guard isCustomArea, screen.autoArea else { return }
+        let b = plan.pixelBounds
+        guard b.width > 0, b.height > 0 else { return }
+        if screen.customWidth != b.width { screen.customWidth = b.width }
+        if screen.customHeight != b.height { screen.customHeight = b.height }
+    }
+
+    /// Area W / H typed in by hand: the area stops following the cards.
+    private func manualArea(_ key: ReferenceWritableKeyPath<ScreenDocument, Int>) -> Binding<Int> {
+        Binding(get: { screen[keyPath: key] },
+                set: { screen.autoArea = false; screen[keyPath: key] = $0 })
     }
 
     private func deleteSelected() {
@@ -889,16 +968,18 @@ struct ScreenConnectionView: View {
                 if let guid {
                     // VX Pro keeps two copies of the layout: the sending card's registers (what NovaLCT writes) and the
                     // web interface's model. Both are written, so NovaLCT, the web UI and NovaMac all see the same.
-                    var registers = ""
-                    if layout.ports.count == 1 {
+                    if layout.ports.count > 1 {
+                        // Several ports: what NovaLCT does (VX2000 Pro capture, 09.11.2026) — registers only, with read-back.
+                        // The web interface's own model is not written: its multi-port write did not map the cards.
+                        status = "Sending to \(address): sending-card registers (NovaLCT protocol, \(layout.ports.count) ports)…"
+                        status = try await ScreenConnectionWriter.sendRegistersMulti(.network(address), layout: layout)
+                    } else {
                         status = "Sending to \(address): sending-card registers (NovaLCT protocol)…"
                         try await ScreenConnectionWriter.sendRegistersOnly(ip: address, layout: layout)
-                        registers = "Registers (NovaLCT protocol) written. "
-                    } else {
-                        registers = "Registers not written (several ports: the VX register map for that is not captured yet). "
+                        let registers = "Registers (NovaLCT protocol) written. "
+                        status = "Sending to \(address): web interface…"
+                        status = registers + (try await UnicoTopologyWriter.send(ip: address, layout: layout, screenGuid: guid))
                     }
-                    status = "Sending to \(address): web interface…"
-                    status = registers + (try await UnicoTopologyWriter.send(ip: address, layout: layout, screenGuid: guid))
                 } else {
                     status = try await ScreenConnectionWriter.send(.network(address), layout: layout)
                 }

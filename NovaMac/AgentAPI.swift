@@ -249,7 +249,7 @@ final class AgentAPI: ObservableObject {
                 "controller": endpoint.key, "port": portLabel(port, endpoint, device),
                 "brightness_percent": Int((Double(s.brightness) * 100 / 255).rounded()), "brightness_raw": s.brightness,
                 "gamma": Double(s.gamma) / 10, "red": s.red, "green": s.green, "blue": s.blue,
-                "calibration": opt(mode.map { ScreenCalibration.Mode(rawValue: $0).map(Self.modeName) ?? String(format: "0x%02X", $0) }),
+                "calibration": opt(mode.map { ScreenCalibration.mode(of: $0).map(Self.modeName) ?? String(format: "0x%02X", $0) }),
             ])
 
         case "GET /v1/receiving-card":
@@ -334,7 +334,7 @@ final class AgentAPI: ObservableObject {
             try requireChanges()
             let name = (body["mode"] as? String ?? "").lowercased()
             guard let mode = ScreenCalibration.Mode.allCases.first(where: { Self.modeName($0) == name }) else {
-                throw fail(400, "mode must be off, brightness or chroma")
+                throw fail(400, "mode must be off, brightness, chroma or full_grayscale")
             }
             let done = try await forEachTarget(body, device, workspace) { endpoint, ports in
                 try await ScreenCalibration.set(endpoint, mode: mode, ports: ports)
@@ -752,7 +752,7 @@ final class AgentAPI: ObservableObject {
     // MARK: Helpers
 
     private static func modeName(_ mode: ScreenCalibration.Mode) -> String {
-        switch mode { case .off: return "off"; case .brightness: return "brightness"; case .chroma: return "chroma" }
+        switch mode { case .off: return "off"; case .brightness: return "brightness"; case .chroma: return "chroma"; case .fullGrayscale: return "full_grayscale" }
     }
 
     private func requireChanges() throws {
@@ -895,7 +895,7 @@ final class AgentAPI: ObservableObject {
             ["POST /v1/brightness {percent, targets}", "brightness 0…100 %"],
             ["POST /v1/gamma {gamma, targets}", "gamma 1.0…4.0 (standard table scaled to the card's own)"],
             ["POST /v1/color {red, green, blue, targets}", "RGB gains 0…255"],
-            ["POST /v1/calibration {mode, targets}", "calibration coefficients: off | brightness | chroma"],
+            ["POST /v1/calibration {mode, targets}", "calibration coefficients: off | brightness | chroma | full_grayscale"],
             ["POST /v1/layout {controller, port, cards|grid, confirm}", "screen layout on one port, sent like Screen Connection's Send to HW (VX: registers + web model): plan without confirm, send with confirm:true; not saved"],
             ["GET /v1/receiving-cards/compare?controller=&port=", "compare the parameter blocks (RCFGX settings) of all cards on a port: odd bytes, suspect cards, a reference card"],
             ["POST /v1/receiving-card/fix {controller, port, card, from_card, offsets?, confirm}", "copy the differing bytes from a good card (never size or card number): plan, then confirm:true; RAM"],

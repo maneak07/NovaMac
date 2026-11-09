@@ -55,8 +55,8 @@ TOOLS = {
     "set_color": ("POST", "/v1/color", "Set red/green/blue gains (0-255 each), e.g. for white balance.",
                   dict(TARGETS, red={"type": "integer"}, green={"type": "integer"}, blue={"type": "integer"}),
                   ["red", "green", "blue"], False),
-    "set_calibration": ("POST", "/v1/calibration", "Switch calibration coefficients: off, brightness or chroma.",
-                        dict(TARGETS, mode={"type": "string", "enum": ["off", "brightness", "chroma"]}), ["mode"], False),
+    "set_calibration": ("POST", "/v1/calibration", "Switch calibration coefficients: off, brightness, chroma or full_grayscale (only on cards that offer it).",
+                        dict(TARGETS, mode={"type": "string", "enum": ["off", "brightness", "chroma", "full_grayscale"]}), ["mode"], False),
     "send_layout": ("POST", "/v1/layout",
                     "Send a screen layout (card positions and sizes on one port), the same way as NovaMac's Screen Connection "
                     "'Send to HW' (VX Pro: sending-card registers + web model; MCTRL/MEE410: registers). ALWAYS call first "
