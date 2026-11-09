@@ -969,10 +969,18 @@ struct ScreenConnectionView: View {
                     // VX Pro keeps two copies of the layout: the sending card's registers (what NovaLCT writes) and the
                     // web interface's model. Both are written, so NovaLCT, the web UI and NovaMac all see the same.
                     if layout.ports.count > 1 {
-                        // Several ports: what NovaLCT does (VX2000 Pro capture, 09.11.2026) — registers only, with read-back.
-                        // The web interface's own model is not written: its multi-port write did not map the cards.
+                        // Several ports: the sending-card registers as NovaLCT writes them (VX2000 Pro capture, 09.11.2026),
+                        // checked by read-back, then the web interface's model — the copy the VX web UI shows and keeps.
                         status = "Sending to \(address): sending-card registers (NovaLCT protocol, \(layout.ports.count) ports)…"
-                        status = try await ScreenConnectionWriter.sendRegistersMulti(.network(address), layout: layout)
+                        let registers = try await ScreenConnectionWriter.sendRegistersMulti(.network(address), layout: layout)
+                        status = "Sending to \(address): web interface…"
+                        do {
+                            status = registers + " Web interface: " + (try await UnicoTopologyWriter.send(ip: address, layout: layout, screenGuid: guid))
+                        } catch let failure as UnicoSession.Failure {
+                            throw failure
+                        } catch {
+                            status = registers + " Web interface not updated: " + error.localizedDescription
+                        }
                     } else {
                         status = "Sending to \(address): sending-card registers (NovaLCT protocol)…"
                         try await ScreenConnectionWriter.sendRegistersOnly(ip: address, layout: layout)

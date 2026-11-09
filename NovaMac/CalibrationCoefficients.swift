@@ -23,15 +23,47 @@ nonisolated enum CalibrationCoefficients {
             case .saveToCard: return 0x0100_0004
             }
         }
-        /// How long the cards usually need (capture: save ~3.4 s, module read ~1.5 s) — the first poll waits this long,
-        /// because a busy card answers a poll only after the controller's 0.5 s time-out.
-        var firstPollDelay: TimeInterval {
-            switch self { case .saveToCard: return 2.5; case .readFromModules: return 1.2; case .readFromCard: return 0.5 }
-        }
     }
 
     static let autoUploadRegister: UInt32 = 0x0200_01D3
     static let autoUploadBits = 0x50       // 05 off → 55 on
+
+    /// The way NovaLCT does it (VX2000 Pro, 140 cabinets, 09.11.2026 — "from modules" on 1, 3 and all cabinets):
+    ///   read 0x02000176 of a card, then dst FF dev1 port FF card FFFF 0x02000176 = 00 ("Coef Type", NovaLCT's default);
+    ///   the command to every selected card back to back (~16 ms apart, no waiting in between);
+    ///   then poll only the LAST card (0x02000200, reserved 0x09) until it answers ack 00 —
+    ///   with all 140 cards it was busy for ~3.5 s, with one card it answered at once.
+    /// Returns the cards that refused the command (index → reason).
+    static func runAll(_ endpoint: NovaEndpoint, _ operation: Operation, targets: [[Int]], timeout: TimeInterval = 120) async throws -> [Int: String] {
+        guard let first = targets.first else { return [:] }
+        return try await NovaLink.run(endpoint, timeout: 3) { socket in
+            _ = try? socket.transact(.read(0x0200_0176, length: 1, device: 1, port: UInt8(first[0]), card: UInt16(first[1])))
+            try socket.transact(.write(0x0200_0176, [0x00], destination: 0xFF, device: 1, port: 0xFF, card: 0xFFFF))
+            var failed: [Int: String] = [:]
+            var last: [Int]?
+            for (i, t) in targets.enumerated() {
+                do {
+                    try socket.transact(.write(operation.register, [0x00], device: 1, port: UInt8(t[0]), card: UInt16(t[1])))
+                    last = t
+                } catch { failed[i] = error.localizedDescription }
+            }
+            guard let last else { return failed }
+            let poll = NovaCommand(device: 1, port: UInt8(last[0]), card: UInt16(last[1]), write: false, reserved: 0x09,
+                                   address: 0x0200_0200, length: 256)
+            let start = Date()
+            while true {
+                do {
+                    _ = try socket.transact(poll)
+                    return failed
+                } catch NovaLinkError.nack(let ack, _) where ack == 0x02 {
+                    if Date().timeIntervalSince(start) > timeout {
+                        throw NovaLinkError.badResponse("the cards stayed busy for \(Int(timeout)) s")
+                    }
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+            }
+        }
+    }
 
     /// Runs one operation on one card and waits until the card reports it is done.
     static func run(_ endpoint: NovaEndpoint, _ operation: Operation, port: Int, card: Int, timeout: TimeInterval = 40) async throws {
@@ -50,37 +82,6 @@ nonisolated enum CalibrationCoefficients {
                     }
                     Thread.sleep(forTimeInterval: 0.3)
                 }
-            }
-        }
-    }
-
-    // MARK: All cards at once
-
-    enum PollState: Sendable { case done, busy, failed(String) }
-
-    /// Sends the command to every card without waiting for each one to finish (the cards work in parallel).
-    /// Returns the cards that did not take the command: index → reason.
-    static func send(_ endpoint: NovaEndpoint, _ operation: Operation, targets: [[Int]]) async throws -> [Int: String] {
-        try await NovaLink.run(endpoint, timeout: 3) { socket in
-            var failed: [Int: String] = [:]
-            for (i, t) in targets.enumerated() {
-                do {
-                    try socket.transact(.write(operation.register, [0x00], device: 1, port: UInt8(t[0]), card: UInt16(t[1])))
-                } catch { failed[i] = error.localizedDescription }
-            }
-            return failed
-        }
-    }
-
-    /// One status poll of every listed card (same poll as NovaLCT: 0x02000200 with reserved byte 0x09).
-    static func poll(_ endpoint: NovaEndpoint, targets: [[Int]]) async throws -> [PollState] {
-        try await NovaLink.run(endpoint, timeout: 3) { socket in
-            targets.map { t -> PollState in
-                let command = NovaCommand(device: 1, port: UInt8(t[0]), card: UInt16(t[1]), write: false, reserved: 0x09,
-                                          address: 0x0200_0200, length: 256)
-                do { _ = try socket.transact(command); return .done }
-                catch NovaLinkError.nack(let ack, _) where ack == 0x02 { return .busy }
-                catch { return .failed(error.localizedDescription) }
             }
         }
     }
@@ -319,56 +320,23 @@ struct CoefficientsPanel: View {
         case .saveToCard: what = "Saving to cards"
         }
         for r in order { results[r] = nil }
+        // As NovaLCT: the command to all selected cards back to back, then wait for the last one.
         job = Task { @MainActor in
             defer { job = nil }
             let began = Date()
             for r in order { results[r] = .working }
-            // 1. The command to every card, without waiting (they all work at the same time).
-            progress = "\(what): sending to \(order.count) cabinets…"
-            var pending: [CardRef] = order
-            var lastError: [CardRef: String] = [:]
-            var retry: [CardRef] = []
+            progress = "\(what): \(order.count) cabinets…"
             do {
-                let refused = try await CalibrationCoefficients.send(endpoint, source, targets: order.map { [$0.port, $0.card] })
-                for (i, why) in refused { retry.append(order[i]); lastError[order[i]] = why }
-                pending.removeAll { retry.contains($0) }
+                let refused = try await CalibrationCoefficients.runAll(endpoint, source, targets: order.map { [$0.port, $0.card] })
+                for (i, ref) in order.enumerated() { results[ref] = refused[i].map { .failed($0) } ?? .done }
+                let seconds = Int(Date().timeIntervalSince(began).rounded())
+                progress = "\(what): \(order.count - refused.count) of \(order.count) cabinets done in \(seconds) s"
+                    + (refused.isEmpty ? "." : ", \(refused.count) refused the command (red — hover for the reason).")
+                    + (source == .saveToCard ? " Stored in the cards." : " Not saved to the cards yet.")
             } catch {
                 for r in order { results[r] = .failed(error.localizedDescription) }
                 progress = "\(what): " + error.localizedDescription
-                return
             }
-            // 2. Poll until every card reports done.
-            try? await Task.sleep(nanoseconds: UInt64(source.firstPollDelay * 1_000_000_000))
-            let deadline = Date().addingTimeInterval(90)
-            while !pending.isEmpty && Date() < deadline && !Task.isCancelled {
-                guard let states = try? await CalibrationCoefficients.poll(endpoint, targets: pending.map { [$0.port, $0.card] }) else {
-                    try? await Task.sleep(nanoseconds: 500_000_000); continue
-                }
-                var still: [CardRef] = []
-                for (ref, state) in zip(pending, states) {
-                    switch state {
-                    case .done: results[ref] = .done
-                    case .busy: still.append(ref)
-                    case .failed(let why): still.append(ref); lastError[ref] = why
-                    }
-                }
-                pending = still
-                progress = "\(what): \(order.count - pending.count - retry.count) of \(order.count) done, \(pending.count) still working…"
-                if !pending.isEmpty { try? await Task.sleep(nanoseconds: 300_000_000) }
-            }
-            for ref in pending { results[ref] = .failed(lastError[ref] ?? (Task.isCancelled ? "stopped" : "no 'done' within 90 s")) }
-            // 3. Cards that did not take the command at once: one by one, as NovaLCT does.
-            for ref in retry where !Task.isCancelled {
-                progress = "\(what): retrying port \(ref.port + 1), card \(ref.card + 1) on its own…"
-                do {
-                    try await CalibrationCoefficients.run(endpoint, source, port: ref.port, card: ref.card)
-                    results[ref] = .done
-                } catch { results[ref] = .failed(error.localizedDescription) }
-            }
-            let failed = order.filter { if case .failed = results[$0] { return true } else { return false } }.count
-            let seconds = Int(Date().timeIntervalSince(began).rounded())
-            progress = "\(what): \(order.count - failed) of \(order.count) cabinets done in \(seconds) s" + (failed > 0 ? ", \(failed) failed (red — hover for the reason)." : ".")
-                + (source == .saveToCard ? " Stored in the cards." : " Not saved to the cards yet.")
         }
     }
 }
