@@ -20,6 +20,8 @@ final class ScreenDocument: ObservableObject, Identifiable {
     @Published var height = 360
     @Published var zoom = 0.5
     @Published var canvasPreset = 0
+    @Published var customWidth = 1920          // "Custom" area, set pixel by pixel
+    @Published var customHeight = 1080
     @Published var hideDetails = false
     @Published var connecting = true
     @Published var gridStep = 40

@@ -6404,6 +6404,242 @@
           }
         }
       }
+    },
+    "Add card" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить карту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加卡"
+          }
+        }
+      }
+    },
+    "Delete card" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить карту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除卡"
+          }
+        }
+      }
+    },
+    "Adds a card of the Width × Height above next to the selected card (or at the right edge). Then type its Card X / Card Y." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляет карту размера Ш × В (поля выше) рядом с выбранной картой (или у правого края). Затем задайте её Card X / Card Y."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在所选卡旁边（或最右侧）添加一张上方宽 × 高尺寸的卡，然后输入其 Card X / Card Y。"
+          }
+        }
+      }
+    },
+    "Removes the selected card from the screen (⌘⌫). The other cards stay where they are; Undo brings it back." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удаляет выбранную карту с экрана (⌘⌫). Остальные карты остаются на местах; Undo вернёт её."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从屏幕上删除所选卡（⌘⌫）。其他卡位置不变；撤销可恢复。"
+          }
+        }
+      }
+    },
+    "Custom…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свой размер…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自定义…"
+          }
+        }
+      }
+    },
+    "Area W" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область Ш"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域宽"
+          }
+        }
+      }
+    },
+    "Area H" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область В"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域高"
+          }
+        }
+      }
+    },
+    "Fit to cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По картам"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "适应卡片"
+          }
+        }
+      }
+    },
+    "Area = the box around all cards." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область = прямоугольник вокруг всех карт."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "区域 = 包围所有卡的矩形。"
+          }
+        }
+      }
+    },
+    "To make the input resolution match, press \"Use area\" in the EDID box above, then Apply." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы входное разрешение совпало, нажмите «Use area» в блоке EDID выше, затем Apply."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要使输入分辨率一致，请在上方 EDID 框中点击“Use area”，然后点击 Apply。"
+          }
+        }
+      }
+    },
+    "Use area %lld × %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Взять область %lld × %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用区域 %lld × %lld"
+          }
+        }
+      }
+    },
+    "4K UHD 3840 × 2160" : {
+
+    },
+    "DCI 4K 4096 × 2160" : {
+
+    },
+    "3840 × 1920" : {
+
+    },
+    "Full HD 1920 × 1080" : {
+
+    },
+    "No connection" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет связи"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无连接"
+          }
+        }
+      }
+    },
+    "Connecting…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在连接…"
+          }
+        }
+      }
+    },
+    "The controller does not answer. Click to stop polling it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Контроллер не отвечает. Нажмите, чтобы прекратить опрос."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制器无响应。单击停止轮询。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

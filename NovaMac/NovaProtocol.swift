@@ -516,7 +516,12 @@ nonisolated enum ControllerModels {
 
     /// Verified: MCTRL300 over USB (21.10.2026) reads F639 / 0001; VX1000 Pro reads family 0x622B.
     static let byHardware: [Int: String] = [0xF639: "MCTRL300"]
-    static let byFamily: [Int: String] = [0x622B: "VX1000 Pro", 0x1113: "MEE410"]   // MEE410: FFFF / 1113 (21.10.2026)
+    static let byFamily: [Int: String] = [0x622B: "VX1000 Pro", 0x622C: "VX2000 Pro",   // 622C: reported by the owner (07.11.2026)
+                                          0x1113: "MEE410"]   // MEE410: FFFF / 1113 (21.10.2026)
+
+    /// VX Pro family IDs (register 0x00000002): web interface (Unico), VX register map.
+    static let vxProFamilies: Set<Int> = [0x622B, 0x622C]
+    static func isVXPro(_ id: ID?) -> Bool { id.map { vxProFamilies.contains($0.family) || vxProFamilies.contains($0.hardware) } ?? false }
 
     /// Address of the sending card's area record for port `port` (0-based): flag, W, H, X, Y (u16).
     /// MCTRL300 (captured): 0x02000050 + 9·p. VX Pro (captured): 0x02000050 + 0x13·p.
@@ -529,7 +534,8 @@ nonisolated enum ControllerModels {
             guard port / 4 < units.count else { return nil }
             return units[port / 4] + 9 * UInt32(port % 4)
         }
-        if name == "VX1000PRO" { return 0x0200_0050 + 0x13 * UInt32(port) }
+        // VX2000 Pro: assumed to share the VX1000 Pro map (same family); not captured yet.
+        if name == "VX1000PRO" || name == "VX2000PRO" { return 0x0200_0050 + 0x13 * UInt32(port) }
         return port < 16 ? 0x0200_0050 + 9 * UInt32(port) : nil
     }
 
@@ -552,7 +558,7 @@ nonisolated enum ControllerModels {
     static func portCount(model: String?) -> Int? {
         guard let model = model?.uppercased().replacingOccurrences(of: " ", with: "") else { return nil }
         let table: [String: Int] = ["MCTRL300": 2, "MCTRL500": 2, "MCTRL600": 4, "MCTRL660": 4, "MCTRL660PRO": 6,
-                                    "MCTRL700": 6, "MCTRLR5": 8, "MCTRL4K": 16, "VX1000PRO": 10, "VX600PRO": 6, "VX400PRO": 4,
+                                    "MCTRL700": 6, "MCTRLR5": 8, "MCTRL4K": 16, "VX1000PRO": 10, "VX2000PRO": 20, "VX600PRO": 6, "VX400PRO": 4,
                                     // MEE410: port numbers in the protocol go in groups of 8 with 6 used
                                     // (0–5, 8–13, 16–21 answer; 6, 7, 14, 15 never do — register dump 21.10.2026),
                                     // so 24 port numbers are searched to reach every connected port.
@@ -576,7 +582,7 @@ nonisolated enum ControllerModels {
     /// User's name for an ID first, then the verified table.
     static func name(_ id: ID) -> String? {
         if let custom = (UserDefaults.standard.dictionary(forKey: namesKey) as? [String: String])?[id.key], !custom.isEmpty { return custom }
-        return byHardware[id.hardware] ?? byFamily[id.family]
+        return byHardware[id.hardware] ?? byFamily[id.family] ?? (vxProFamilies.contains(id.hardware) ? byFamily[id.hardware] : nil)
     }
 
     static func setName(_ name: String, for id: ID) {

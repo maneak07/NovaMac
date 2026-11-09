@@ -111,7 +111,7 @@ final class DashboardCenter: ObservableObject {
             peak[key] = top
             var h = Health(online: true, counts: scan.counts, expected: top,
                            maxTemperature: scan.temperatures.max(), minVoltage: scan.voltages.min())
-            if scan.id.family == 0x622B || model?.uppercased().hasPrefix("VX") == true {
+            if ControllerModels.vxProFamilies.contains(scan.id.family) || model?.uppercased().hasPrefix("VX") == true {
                 if let list = try? await ScreenMonitor.inputs(endpoint) {
                     if let on = list.first(where: { $0.signal }) {
                         h.input = .signal("\(on.width) × \(on.height)" + (on.rate.map { String(format: " @ %.0f Hz", $0) } ?? ""))
@@ -162,7 +162,7 @@ struct DashboardPage: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Controllers").font(.headline)
-                Text("\(device.connected.count) connected").font(.caption).foregroundStyle(.secondary)
+                Text("\(onlineCount) connected").font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 if device.discovering { ProgressView().controlSize(.small) }
                 Button {
@@ -230,8 +230,30 @@ struct DashboardPage: View {
         .onChange(of: device.connected) { _, _ in Task { await center.refreshAll() } }
     }
 
+    /// Controllers that really answer — not just the ones switched on with Connect.
+    private var onlineCount: Int {
+        device.connected.filter { center.health[$0]?.online == true }.count
+    }
+
+    private enum LinkState { case off, connecting, online, lost }
+
+    private func link(_ connected: Bool, _ h: DashboardCenter.Health?) -> LinkState {
+        guard connected else { return .off }
+        guard let h else { return .connecting }
+        return h.online ? .online : .lost
+    }
+
+    private func linkButton(_ link: LinkState) -> (title: LocalizedStringKey, symbol: String, tint: Color, help: LocalizedStringKey) {
+        switch link {
+        case .off: return ("Connect", "power", accent, "Connect: select this controller and poll its status.")
+        case .connecting: return ("Connecting…", "ellipsis.circle", .gray, "Click to disconnect (stop polling this controller).")
+        case .online: return ("Connected", "checkmark.circle.fill", .green, "Click to disconnect (stop polling this controller).")
+        case .lost: return ("No connection", "xmark.circle.fill", .red, "The controller does not answer. Click to stop polling it.")
+        }
+    }
+
     private func isVX(_ endpoint: NovaEndpoint) -> Bool {
-        device.ids[endpoint.key]?.family == 0x622B || device.models[endpoint.key]?.uppercased().hasPrefix("VX") == true
+        ControllerModels.isVXPro(device.ids[endpoint.key]) || device.models[endpoint.key]?.uppercased().hasPrefix("VX") == true
     }
 
     private func addIP() {
@@ -246,11 +268,13 @@ struct DashboardPage: View {
         let connected = device.isConnected(endpoint)
         let selected = device.selection.key == key
         let h = center.health[key]
+        let state = link(connected, h)
+        let button = linkButton(state)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: endpoint.isUSB ? "cable.connector" : "network")
                     .font(.title3)
-                    .foregroundStyle(connected ? accent : Color.secondary)
+                    .foregroundStyle(state == .online ? accent : Color.secondary)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(device.models[key] ?? (endpoint.isUSB ? "USB sending card" : "Network controller"))
@@ -263,13 +287,12 @@ struct DashboardPage: View {
                     if connected { center.forget(key) }
                     device.toggleConnection(endpoint)
                 } label: {
-                    Label(connected ? "Connected" : "Connect",
-                          systemImage: connected ? "checkmark.circle.fill" : "power")
+                    Label(button.title, systemImage: button.symbol)
                         .frame(minWidth: 96)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(connected ? .green : accent)
-                .help(connected ? "Click to disconnect (stop polling this controller)." : "Connect: select this controller and poll its status.")
+                .tint(button.tint)
+                .help(button.help)
             }
 
             HStack(spacing: 0) {

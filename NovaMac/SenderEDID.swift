@@ -98,6 +98,8 @@ nonisolated enum SenderEDID {
 /// "EDID" box on the Screen Connection page — shown for MCTRL sending cards only.
 struct SenderEDIDBox: View {
     let endpoint: NovaEndpoint
+    /// Screen Connection's custom area: offered as the new input resolution.
+    var area: (width: Int, height: Int)? = nil
 
     @State private var current: [UInt8] = []
     @State private var width = 1920
@@ -140,6 +142,10 @@ struct SenderEDIDBox: View {
                 }
                 field("Width", value: $width)
                 field("Height", value: $height)
+                if let area, area.width != width || area.height != height {
+                    Button("Use area \(area.width) × \(area.height)") { width = area.width; height = area.height }
+                        .buttonStyle(.borderless).font(.caption)
+                }
                 HStack {
                     Text("Hz").frame(width: 44, alignment: .leading)
                     TextField("", value: $refresh, format: .number.precision(.fractionLength(0...2)))

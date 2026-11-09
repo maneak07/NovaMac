@@ -32,7 +32,9 @@ struct ScreenConnectionPlan: Codable, Equatable {
     func validate() throws {
         guard version == 1, (1...64).contains(columns), (1...64).contains(rows), columns * rows <= 1024,
               (0...65535).contains(originX), (0...65535).contains(originY),
-              cells.count == columns * rows, cells.map(\.id).sorted() == Array(0..<cells.count) else {
+              // Cards can be deleted and added one by one, so ids may have gaps and go past rows × columns.
+              (1...1024).contains(cells.count), Set(cells.map(\.id)).count == cells.count,
+              cells.allSatisfy({ $0.id >= 0 }) else {
             throw RCFGXError.invalid("Invalid screen grid or coordinates.")
         }
         var addresses = Set<String>()
@@ -96,13 +98,44 @@ struct ScreenConnectionPlan: Codable, Equatable {
 
     mutating func connect(mode: Int, sender: Int, port: Int) {
         var order = 1
-        for id in route(mode) {
-            let index = cells.firstIndex { $0.id == id }!
+        let routed = route(mode)
+        // Deleted grid cells are skipped; cards added outside the grid follow, top to bottom, left to right.
+        let rect = rects
+        let extra = cells.map(\.id).filter { !Set(routed).contains($0) }
+            .sorted { a, b in
+                let ra = rect[a]!, rb = rect[b]!
+                return (ra.y, ra.x) < (rb.y, rb.x)
+            }
+        for id in routed + extra {
+            guard let index = cells.firstIndex(where: { $0.id == id }) else { continue }
             cells[index].order = nil
             guard !cells[index].blank else { continue }
             cells[index].sender = sender; cells[index].port = port
             cells[index].order = order; order += 1
         }
+    }
+
+    /// Deletes one card from the screen. The other cards keep their places (positions are pinned first);
+    /// if the card was in a cable chain, the cards after it move up one number.
+    mutating func removeCell(_ id: Int) {
+        guard cells.count > 1, let i = cells.firstIndex(where: { $0.id == id }) else { return }
+        pinPositions()
+        if let order = cells[i].order {
+            let sender = cells[i].sender, port = cells[i].port
+            for j in cells.indices where cells[j].sender == sender && cells[j].port == port {
+                if let o = cells[j].order, o > order { cells[j].order = o - 1 }
+            }
+        }
+        cells.remove(at: i)
+    }
+
+    /// Adds a card of the given size at x/y (screen pixels) and returns its id. It is not connected yet.
+    @discardableResult
+    mutating func addCell(x: Int, y: Int, width: Int, height: Int) -> Int {
+        pinPositions()
+        let id = (cells.map(\.id).max() ?? -1) + 1
+        cells.append(Cell(id: id, width: width, height: height, x: max(0, x), y: max(0, y)))
+        return id
     }
 }
 

@@ -149,7 +149,7 @@ final class MonitorCenter: ObservableObject {
                 status[screen.id] = map
                 errors[screen.id] = nil
             } catch { errors[screen.id] = "Cards: \(error.localizedDescription)" }
-            if device.ids[endpoint.key]?.family == 0x622B || device.models[endpoint.key]?.uppercased().hasPrefix("VX") == true {
+            if ControllerModels.isVXPro(device.ids[endpoint.key]) || device.models[endpoint.key]?.uppercased().hasPrefix("VX") == true {
                 do { inputs[screen.id] = try await ScreenMonitor.inputs(endpoint); notes[screen.id] = nil }
                 catch { inputs[screen.id] = nil; notes[screen.id] = "Input status not readable: \(error.localizedDescription)" }
             } else {

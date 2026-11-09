@@ -91,8 +91,13 @@ struct ScreenConnectionView: View {
     private let canvasPresets: [(name: String, width: Int, height: Int)] = [
         ("4K UHD 3840 × 2160", 3840, 2160), ("DCI 4K 4096 × 2160", 4096, 2160),
         ("3840 × 1920", 3840, 1920), ("Full HD 1920 × 1080", 1920, 1080),
+        ("Custom…", 0, 0),
     ]
-    private var canvasLimit: (width: Int, height: Int) { (canvasPresets[canvasPreset].width, canvasPresets[canvasPreset].height) }
+    private var isCustomArea: Bool { canvasPreset == canvasPresets.count - 1 }
+    private var canvasLimit: (width: Int, height: Int) {
+        isCustomArea ? (screen.customWidth, screen.customHeight)
+                     : (canvasPresets[canvasPreset].width, canvasPresets[canvasPreset].height)
+    }
     private let routeNames = ["↘ Rows", "↘ Columns", "↙ Rows", "↙ Columns", "↗ Rows", "↗ Columns", "↖ Rows", "↖ Columns"]
 
     var body: some View {
@@ -303,7 +308,7 @@ struct ScreenConnectionView: View {
                 .help("Controller of \(screen.name). Add network controllers on the Dashboard.")
             }
             if (device.models[endpoint.key] ?? "").uppercased().hasPrefix("MCTRL") {
-                SenderEDIDBox(endpoint: endpoint)
+                SenderEDIDBox(endpoint: endpoint, area: isCustomArea ? canvasLimit : nil)
             }
             GroupBox("Sending Card Number") { number("Sender", value: $screen.sender, range: 1...256).padding(8) }
             GroupBox("Ethernet Port No.") {
@@ -337,7 +342,22 @@ struct ScreenConnectionView: View {
             GroupBox("Placement") {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Area", selection: $screen.canvasPreset) {
-                        ForEach(canvasPresets.indices, id: \.self) { Text(canvasPresets[$0].name).tag($0) }
+                        ForEach(canvasPresets.indices, id: \.self) { Text(LocalizedStringKey(canvasPresets[$0].name)).tag($0) }
+                    }
+                    if isCustomArea {
+                        HStack {
+                            number("Area W", value: $screen.customWidth, range: 1...16384)
+                            number("Area H", value: $screen.customHeight, range: 1...16384)
+                        }
+                        Button("Fit to cards") {
+                            let b = plan.pixelBounds
+                            screen.customWidth = max(1, b.width); screen.customHeight = max(1, b.height)
+                        }
+                        .help("Area = the box around all cards.")
+                        if (device.models[endpoint.key] ?? "").uppercased().hasPrefix("MCTRL") {
+                            Text("To make the input resolution match, press \"Use area\" in the EDID box above, then Apply.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                     Toggle("Magnet (snap to cards)", isOn: $screen.magnet)
                     Toggle("Snap to grid", isOn: $screen.snapToGrid)
@@ -348,6 +368,14 @@ struct ScreenConnectionView: View {
                         number("Card X", value: selectedCoordinate(true), range: 0...65535)
                         number("Card Y", value: selectedCoordinate(false), range: 0...65535)
                     }.disabled(selected == nil)
+                    HStack {
+                        Button("Add card") { addCard() }
+                            .help("Adds a card of the Width × Height above next to the selected card (or at the right edge). Then type its Card X / Card Y.")
+                        Button("Delete card", role: .destructive) { deleteSelected() }
+                            .keyboardShortcut(.delete, modifiers: .command)
+                            .disabled(selected == nil || plan.cells.count <= 1)
+                            .help("Removes the selected card from the screen (⌘⌫). The other cards stay where they are; Undo brings it back.")
+                    }
                     Button("Back to rows × columns grid") { remember(); plan.unpinPositions(); status = "Positions reset to the rows × columns grid." }
                 }.padding(8)
             }
@@ -576,6 +604,26 @@ struct ScreenConnectionView: View {
                 let r = plan.rects.values
                 status = "Layout moved to X \(r.map(\.x).min() ?? 0), Y \(r.map(\.y).min() ?? 0)."
             })
+    }
+
+    private func deleteSelected() {
+        guard let id = selected, plan.cells.count > 1,
+              let cell = plan.cells.first(where: { $0.id == id }) else { return }
+        remember()
+        plan.removeCell(id)
+        selected = nil
+        status = "Card deleted" + (cell.order.map { " (it was №\($0) on port \(cell.port); the cards after it moved up)" } ?? "") + ". Undo brings it back."
+    }
+
+    private func addCard() {
+        let w = screen.width, h = screen.height
+        let rects = plan.rects
+        var x = rects.values.map(\.maxX).max() ?? 0, y = 0
+        if let id = selected, let r = rects[id] { x = r.maxX; y = r.y }
+        remember()
+        let id = plan.addCell(x: x, y: y, width: w, height: h)
+        selected = id
+        status = "Card added at X \(x), Y \(y) (\(w) × \(h)). Set Card X / Card Y to move it, then connect it."
     }
 
     private func selectedCoordinate(_ isX: Bool) -> Binding<Int> {

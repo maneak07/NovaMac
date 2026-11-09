@@ -127,8 +127,9 @@ enum ScreenConnectionWriter {
     nonisolated enum Profile: Sendable, Equatable {
         case vxPro, classic
 
-        /// Model ID (register 0x00000002): 0x622B = VX1000 Pro; anything else is treated as a classic MCTRL card.
-        static func forModel(_ id: Int) -> Profile { id == 0x622B ? .vxPro : .classic }
+        /// Model ID (register 0x00000002): 0x622B = VX1000 Pro, 0x622C = VX2000 Pro (assumed to match VX1000 Pro);
+        /// anything else is treated as a classic MCTRL card.
+        static func forModel(_ id: Int) -> Profile { ControllerModels.vxProFamilies.contains(id) ? .vxPro : .classic }
         var name: String { self == .vxPro ? "VX Pro" : "MCTRL (classic)" }
         var tablePiece: Int { self == .vxPro ? 4096 : 256 }
     }
