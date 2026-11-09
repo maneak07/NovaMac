@@ -5626,6 +5626,22 @@
         }
       }
     },
+    "Save the calibration mode?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить режим калибровки?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存校正模式？"
+          }
+        }
+      }
+    },
     "Save to cards" : {
       "localizations" : {
         "ru" : {
@@ -6461,6 +6477,38 @@
         }
       }
     },
+    "Stores %@ in the receiving cards of the selected screens, so it stays after a power cycle." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохраняет «%@» в приёмных картах выбранных экранов, чтобы режим остался после выключения питания."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将 %@ 保存到所选屏幕的接收卡中，断电后仍保持。"
+          }
+        }
+      }
+    },
+    "Stores the calibration mode in the receiving cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохраняет режим калибровки в приёмных картах"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将校正模式保存到接收卡"
+          }
+        }
+      }
+    },
     "Stores the current settings on every controller of the screen tabs" : {
       "localizations" : {
         "ru" : {
@@ -6527,6 +6575,7 @@
       }
     },
     "Takes effect immediately, not saved — a power cycle restores the stored setting. Only the mode bits are changed; the cards' other settings in the same byte are kept." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ru" : {
           "stringUnit" : {
@@ -6538,6 +6587,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即生效，不保存——断电后恢复已存设置。只修改模式位，同一字节中接收卡的其他设置保持不变。"
+          }
+        }
+      }
+    },
+    "Takes effect immediately; Save to HW keeps it across a power cycle, otherwise the cards come back with the stored setting. Only the mode bits are changed; the cards' other settings in the same byte are kept." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действует сразу; Save to HW сохраняет режим после выключения питания, иначе карты вернутся к сохранённой настройке. Меняются только биты режима, остальные настройки карт в этом байте сохраняются."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即生效；“保存到硬件”可在断电后保留，否则接收卡恢复已存设置。只修改模式位，同一字节中接收卡的其他设置保持不变。"
           }
         }
       }
