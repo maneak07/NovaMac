@@ -326,6 +326,8 @@ struct CoefficientsPanel: View {
             do {
                 let refused = try await CalibrationCoefficients.runAll(endpoint, source, targets: order.map { [$0.port, $0.card] })
                 for (i, ref) in order.enumerated() { results[ref] = refused[i].map { .failed($0) } ?? .done }
+                let ran = order.enumerated().filter { refused[$0.offset] == nil }.map { [$0.element.port, $0.element.card] }
+                CoefficientStore.shared.cardsRan(source, controller: endpoint.key, cards: ran)
                 let seconds = Int(Date().timeIntervalSince(began).rounded())
                 progress = "\(what): \(order.count - refused.count) of \(order.count) cabinets done in \(seconds) s"
                     + (refused.isEmpty ? "." : ", \(refused.count) refused the command (red — hover for the reason).")

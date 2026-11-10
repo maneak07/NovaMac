@@ -7324,6 +7324,524 @@
           }
         }
       }
+    },
+    "No coefficient backup yet" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Резервной копии коэффициентов ещё нет"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无系数备份"
+          }
+        }
+      }
+    },
+    "Save the coefficients?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить коэффициенты?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存系数？"
+          }
+        }
+      }
+    },
+    "Restore from backup?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Восстановить из резервной копии?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从备份恢复？"
+          }
+        }
+      }
+    },
+    "Calibration is disabled: the cards ignore their coefficients, so neither factors nor Pixel Razor show. Choose a calibration mode above." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Калибровка выключена: карты не используют коэффициенты, поэтому ни множители, ни Pixel Razor не видны. Выберите режим калибровки выше."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "校正已关闭：接收卡不使用系数，因此系数倍率和 Pixel Razor 都不会显示。请在上方选择校正模式。"
+          }
+        }
+      }
+    },
+    "Module matching and Pixel Razor — %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подгонка модулей и Pixel Razor — %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模组匹配与 Pixel Razor — %@"
+          }
+        }
+      }
+    },
+    "Back up first" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала создать копию"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先备份"
+          }
+        }
+      }
+    },
+    "Continue without backup" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить без копии"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不备份继续"
+          }
+        }
+      }
+    },
+    "Factors change the coefficients of the selected modules. Until they are saved to the cards, 1.000 brings them back; after saving only a backup can. A backup of a card takes about 4 minutes over Wi-Fi." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Множители меняют коэффициенты выбранных модулей. Пока они не сохранены в карты, 1.000 возвращает прежние значения; после сохранения — только резервная копия. Копия одной карты по Wi-Fi занимает около 4 минут."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "倍率会改变所选模组的系数。保存到接收卡之前，1.000 可恢复原值；保存之后只能用备份恢复。通过 Wi-Fi 备份一张卡约需 4 分钟。"
+          }
+        }
+      }
+    },
+    "Writes the coefficient tables of every card of %@ to flash, with the current factors and Pixel Razor cuts. The seam brightness is saved in Seam correction." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записывает таблицы коэффициентов всех карт экрана %@ во флеш-память — с текущими множителями и отключениями Pixel Razor. Яркость швов сохраняется в «Коррекции швов»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将 %@ 所有接收卡的系数表（含当前倍率和 Pixel Razor 关闭的像素）写入闪存。拼缝亮度在“拼缝校正”中保存。"
+          }
+        }
+      }
+    },
+    "Writes the backed-up tables back into %@. Not saved until you press Save to cards." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записывает сохранённые таблицы обратно в %@. Не сохраняется, пока вы не нажмёте «Сохранить в карты»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将备份的系数表写回 %@。按“保存到接收卡”之前不会保存。"
+          }
+        }
+      }
+    },
+    "Whole cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карты целиком"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整张卡"
+          }
+        }
+      }
+    },
+    "Factors multiply the coefficients the selection had when it was chosen; 1.000 returns to them until you save. Brightness scales all three colours." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Множители умножают коэффициенты, которые были у выделения в момент выбора; до сохранения 1.000 возвращает к ним. Яркость масштабирует все три цвета."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "倍率乘以选中区域在选择时的系数；保存之前 1.000 可恢复。亮度同时缩放三种颜色。"
+          }
+        }
+      }
+    },
+    "All 1.000" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все 1.000"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部 1.000"
+          }
+        }
+      }
+    },
+    "Switches off a pixel or one of its LEDs in the coefficient table (screen coordinates, top left = 0/0) — for an LED that shows a wrong colour. An LED that lights without being driven stays on. The old coefficients are kept here for Restore; Save to cards keeps the cut after a power cycle." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключает пиксель или один из его светодиодов в таблице коэффициентов (координаты экрана, левый верхний угол = 0/0) — для светодиода, который светится неправильным цветом. Светодиод, который горит без управления, останется включённым. Старые коэффициенты хранятся здесь для восстановления; «Сохранить в карты» сохраняет отключение после перезапуска питания."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在系数表中关闭一个像素或其中一颗 LED（屏幕坐标，左上角 = 0/0），用于颜色异常的 LED。不受驱动也常亮的 LED 无法关闭。旧系数保存在这里以便恢复；“保存到接收卡”后断电重启仍保持关闭。"
+          }
+        }
+      }
+    },
+    "Pixel Razor" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel Razor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel Razor"
+          }
+        }
+      }
+    },
+    "Test" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тест"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试"
+          }
+        }
+      }
+    },
+    "Switch off" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
+    },
+    "x %lld, y %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "x %lld, y %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "x %lld, y %lld"
+          }
+        }
+      }
+    },
+    "%@ %lld/%lld · %@ · %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %lld/%lld · %@ · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %lld/%lld · %@ · %@"
+          }
+        }
+      }
+    },
+    "Back up coefficients" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить копию коэффициентов"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份系数"
+          }
+        }
+      }
+    },
+    "Reads the coefficient table of every card of this screen into NovaMac (about 4 minutes per card over Wi-Fi)" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Считывает таблицу коэффициентов каждой карты этого экрана в NovaMac (около 4 минут на карту по Wi-Fi)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此屏幕每张接收卡的系数表读入 NovaMac（通过 Wi-Fi 每张卡约 4 分钟）"
+          }
+        }
+      }
+    },
+    "Show backups" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать копии"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示备份"
+          }
+        }
+      }
+    },
+    "Writes the coefficient tables of this screen's cards to their flash (about 10 s per port)" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записывает таблицы коэффициентов карт этого экрана в их флеш-память (около 10 с на порт)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此屏幕接收卡的系数表写入其闪存（每个网口约 10 秒）"
+          }
+        }
+      }
+    },
+    "No backups of these cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет копий этих карт"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些接收卡没有备份"
+          }
+        }
+      }
+    },
+    "%@ x %lld…%lld, y %lld…%lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ x %lld…%lld, y %lld…%lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ x %lld…%lld, y %lld…%lld"
+          }
+        }
+      }
+    },
+    "Red" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Красный"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "红"
+          }
+        }
+      }
+    },
+    "Green" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зелёный"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "绿"
+          }
+        }
+      }
+    },
+    "Blue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синий"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "蓝"
+          }
+        }
+      }
+    },
+    "Whole pixel" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Весь пиксель"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整个像素"
+          }
+        }
+      }
+    },
+    "Red LED" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Красный светодиод"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "红色 LED"
+          }
+        }
+      }
+    },
+    "Green LED" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зелёный светодиод"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "绿色 LED"
+          }
+        }
+      }
+    },
+    "Blue LED" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синий светодиод"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "蓝色 LED"
+          }
+        }
+      }
+    },
+    "x" : {
+
+    },
+    "y" : {
+
     }
   },
   "version" : "1.0"

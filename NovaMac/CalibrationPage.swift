@@ -113,6 +113,7 @@ struct CalibrationPage: View {
             if let screen = chosen.first {
                 SeamPanel(screen: screen, device: device).id(screen.id)
                 CoefficientsPanel(screen: screen, device: device).id(screen.id)
+                ModuleMatchingPanel(screen: screen, device: device, calibrationOff: mode == .off).id(screen.id)
             }
             if let error { Text(error).foregroundStyle(.red).textSelection(.enabled) }
         }
