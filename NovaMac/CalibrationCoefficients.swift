@@ -6,6 +6,7 @@ import SwiftUI
 //   read from the modules:         write dev1 port p card c  0x01000007 = 00
 //   then NovaLCT polls the same card: read 0x02000200 (256 bytes) with reserved byte 0x09;
 //   the card answers ack 02 while it is busy and ack 00 when done (module read: ~3 polls).
+//   A TB30 with an A8s-N card answers the same poll with ack 01 while it is busy (07.11.2026).
 // The coefficients do not travel to the computer: the card loads them into its working memory.
 // Second capture (same object, 09.11.2026):
 //   Save Calibration Coefficients (to the receiving card): write dev1 port p card c  0x01000004 = 00, then the same
@@ -28,6 +29,27 @@ nonisolated enum CalibrationCoefficients {
     static let autoUploadRegister: UInt32 = 0x0200_01D3
     static let autoUploadBits = 0x50       // 05 off → 55 on
 
+    /// Busy answers to the poll in `waitIdle`: ack 02 on VX2000 Pro, ack 01 on a TB30 with an A8s-N card.
+    static func isBusy(_ ack: UInt8) -> Bool { ack == 0x01 || ack == 0x02 }
+
+    /// Polls one card (read 0x02000200, 256 bytes, reserved 0x09) until it no longer reports busy.
+    static func waitIdle(_ socket: NovaSocket, port: Int, card: Int, timeout: TimeInterval, interval: TimeInterval = 0.3) throws {
+        let poll = NovaCommand(device: 1, port: UInt8(port), card: UInt16(card), write: false, reserved: 0x09,
+                               address: 0x0200_0200, length: 256)
+        let start = Date()
+        while true {
+            do {
+                _ = try socket.transact(poll)
+                return
+            } catch NovaLinkError.nack(let ack, _) where isBusy(ack) {
+                if Date().timeIntervalSince(start) > timeout {
+                    throw NovaLinkError.badResponse("the card stayed busy for \(Int(timeout)) s")
+                }
+                Thread.sleep(forTimeInterval: interval)
+            }
+        }
+    }
+
     /// The way NovaLCT does it (VX2000 Pro, 140 cabinets, 09.11.2026 — "from modules" on 1, 3 and all cabinets):
     ///   read 0x02000176 of a card, then dst FF dev1 port FF card FFFF 0x02000176 = 00 ("Coef Type", NovaLCT's default);
     ///   the command to every selected card back to back (~16 ms apart, no waiting in between);
@@ -48,20 +70,8 @@ nonisolated enum CalibrationCoefficients {
                 } catch { failed[i] = error.localizedDescription }
             }
             guard let last else { return failed }
-            let poll = NovaCommand(device: 1, port: UInt8(last[0]), card: UInt16(last[1]), write: false, reserved: 0x09,
-                                   address: 0x0200_0200, length: 256)
-            let start = Date()
-            while true {
-                do {
-                    _ = try socket.transact(poll)
-                    return failed
-                } catch NovaLinkError.nack(let ack, _) where ack == 0x02 {
-                    if Date().timeIntervalSince(start) > timeout {
-                        throw NovaLinkError.badResponse("the cards stayed busy for \(Int(timeout)) s")
-                    }
-                    Thread.sleep(forTimeInterval: 0.1)
-                }
-            }
+            try waitIdle(socket, port: last[0], card: last[1], timeout: timeout, interval: 0.1)
+            return failed
         }
     }
 
@@ -69,20 +79,7 @@ nonisolated enum CalibrationCoefficients {
     static func run(_ endpoint: NovaEndpoint, _ operation: Operation, port: Int, card: Int, timeout: TimeInterval = 40) async throws {
         try await NovaLink.run(endpoint, timeout: 3) { socket in
             try socket.transact(.write(operation.register, [0x00], device: 1, port: UInt8(port), card: UInt16(card)))
-            let poll = NovaCommand(device: 1, port: UInt8(port), card: UInt16(card), write: false, reserved: 0x09,
-                                   address: 0x0200_0200, length: 256)
-            let start = Date()
-            while true {
-                do {
-                    _ = try socket.transact(poll)
-                    return
-                } catch NovaLinkError.nack(let ack, _) where ack == 0x02 {
-                    if Date().timeIntervalSince(start) > timeout {
-                        throw NovaLinkError.badResponse("the card stayed busy for \(Int(timeout)) s")
-                    }
-                    Thread.sleep(forTimeInterval: 0.3)
-                }
-            }
+            try waitIdle(socket, port: port, card: card, timeout: timeout)
         }
     }
 
