@@ -8,7 +8,8 @@ import Combine
 //             until "no such card" (same read as Monitoring). The most cards ever seen on a port is kept as
 //             the expected count, so a card that drops out shows as lost.
 //   Temp.   — highest card temperature (0x0A000000 [1] / 2 °C, valid when bit 7 of [0] is set).
-//   Input   — VX Pro: register 0x13010001 (protocol PDF §3.8.1; still not matching HDMI on the test unit).
+//   Input   — VX Pro: the web API's input list (interface/list-detail), else register 0x13010001
+//             (protocol PDF §3.8.1; reads only zeros on VX Pro with HDMI active) — see ScreenMonitor.inputs.
 //             Other models: not known yet (needs a NovaLCT capture).
 
 nonisolated enum ControllerHealth {
@@ -114,7 +115,8 @@ final class DashboardCenter: ObservableObject {
             if ControllerModels.vxProFamilies.contains(scan.id.family) || model?.uppercased().hasPrefix("VX") == true {
                 if let list = try? await ScreenMonitor.inputs(endpoint) {
                     if let on = list.first(where: { $0.signal }) {
-                        h.input = .signal("\(on.width) × \(on.height)" + (on.rate.map { String(format: " @ %.0f Hz", $0) } ?? ""))
+                        h.input = .signal((on.name.map { $0 + " · " } ?? "") + "\(on.width) × \(on.height)"
+                                          + (on.rate.map { String(format: " @ %.0f Hz", $0) } ?? ""))
                     } else {
                         h.input = .noSignal
                     }
@@ -437,7 +439,7 @@ struct DashboardPage: View {
         case .notRead: return Lamp(color: off, value: "—", help: "Not read yet")
         case .unknown(let why): return Lamp(color: off, value: "n/a", help: why)
         case .noSignal: return Lamp(color: .red, value: "No signal",
-                                     help: "Register 0x13010001 reports no signal. Not confirmed yet on VX1000 Pro (it read \"no signal\" with HDMI active).")
+                                     help: "No video input reports a signal.")
         case .signal(let text): return Lamp(color: .green, value: text, help: "Input signal: " + text)
         }
     }

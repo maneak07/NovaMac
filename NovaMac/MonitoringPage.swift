@@ -5,9 +5,16 @@ import Combine
 // positions and the load on every Ethernet port.
 //
 // Sources:
-//   Input sources — VX Pro protocol V1.0.2 §3.8.1 (documented): read dev0 0x13010001, 256 bytes;
+//   Input sources — network controllers with the Unico web API (VX Pro): GET /unico/v1/interface/list-detail
+//     (port 19999, readable without a login). Every connector is listed; the video inputs have
+//     auxiliaryInfo.connectorInfo.interfaceType 2, state 1 = signal, actualTiming = what arrives
+//     (horizontal/vertical addTime = width/height, refreshInt = Hz × 100). VX2000 Pro (firmware V1.4.1,
+//     16.11.2026): HDMI 1 and 2 state 1 at 3360×1890, refreshInt 6000; internal sources (U-Disk, MOSAIC)
+//     are type 2 too and carry a timing with state 0, so only state counts.
+//   Otherwise VX Pro protocol V1.0.2 §3.8.1 (documented): read dev0 0x13010001, 256 bytes;
 //     source k at 1 + 32k: interlaced, state (1 = signal), width u16, height u16, frame-rate count u16
-//     (rate = 100 000 000 / count, in 0.01 Hz).
+//     (rate = 100 000 000 / count, in 0.01 Hz). On VX1000 Pro and VX2000 Pro it read "no signal" with HDMI
+//     active (all 256 bytes zero on the VX2000 Pro), so a block of zeros counts as "not readable".
 //   Card status — dev1 port p card c 0x0A000000, 82 bytes, as NovaLCT reads it (MEE410 / VX captures).
 //       [0] bit 7 = temperature valid, [1] temperature × 2 (°C) — confirmed 21.10.2026 against NovaLCT
 //           MonitorSite on VX1000 Pro: 0x66 → 51 °C (card 1), 0x64 → 50 °C (card 2)
@@ -18,12 +25,20 @@ import Combine
 nonisolated enum ScreenMonitor {
     struct Input: Sendable, Identifiable {
         let index: Int
+        var name: String? = nil     // the controller's name for the input (web API), nil for the register
         let signal: Bool
         let interlaced: Bool
         let width: Int, height: Int
         let rate: Double?           // Hz
-        let raw: [UInt8]            // the source's 32 bytes as read
+        var raw: [UInt8] = []       // the source's 32 bytes as read (register)
         var id: Int { index }
+        /// One line for "Raw input status": the register bytes, or what the web API reported.
+        var rawText: String {
+            if name != nil {
+                return signal ? "state 1, \(width) × \(height)" + (rate.map { String(format: " @ %.2f Hz", $0) } ?? "") : "state 0"
+            }
+            return raw.map { String(format: "%02X", $0) }.joined(separator: " ")
+        }
     }
 
     struct Card: Sendable {
@@ -35,9 +50,11 @@ nonisolated enum ScreenMonitor {
     }
 
     static func inputs(_ endpoint: NovaEndpoint) async throws -> [Input] {
+        if case .network(let ip) = endpoint, let list = try? await webInputs(ip: ip), !list.isEmpty { return list }
         let b = try await NovaLink.run(endpoint, timeout: 2) { socket in
             try socket.transact(.read(0x1301_0001, length: 256))
         }
+        guard b.contains(where: { $0 != 0 }) else { throw NovaLinkError.badResponse("the input register reads only zeros") }
         var list: [Input] = []
         for k in 0..<8 {
             let o = 1 + 32 * k
@@ -49,6 +66,27 @@ nonisolated enum ScreenMonitor {
                               raw: Array(b[o..<min(o + 32, b.count)])))
         }
         return list
+    }
+
+    /// Video inputs as the controller's web API reports them (see the header). Only inputs with signal carry a size.
+    static func webInputs(ip: String) async throws -> [Input] {
+        let json = try await UnicoSession.shared(ip: ip).get("interface/list-detail")
+        let items = ((json["data"] as? [String: Any])?["list"] as? [[String: Any]]) ?? []
+        return items.compactMap { item in
+            let aux = item["auxiliaryInfo"] as? [String: Any]
+            guard let id = item["interfaceId"] as? Int,
+                  (aux?["connectorInfo"] as? [String: Any])?["interfaceType"] as? Int == 2 else { return nil }
+            let name = (item["general"] as? [String: Any])?["name"] as? String ?? aux?["alias"] as? String ?? ""
+            let signal = item["state"] as? Int == 1
+            let t = item["actualTiming"] as? [String: Any] ?? [:]
+            let w = signal ? (t["horizontal"] as? [String: Any])?["addTime"] as? Int ?? 0 : 0
+            let h = signal ? (t["vertical"] as? [String: Any])?["addTime"] as? Int ?? 0 : 0
+            let hz = t["refresh"] as? Int ?? 0, hundredths = t["refreshInt"] as? Int ?? 0
+            let rate: Double? = hundredths > 0 && abs(Double(hundredths) / 100 - Double(hz)) < 1 ? Double(hundredths) / 100
+                : hz > 0 ? Double(hz) : nil
+            return Input(index: id, name: name.isEmpty ? "Input \(id)" : name, signal: signal,
+                         interlaced: t["interlaced"] as? Int == 1, width: w, height: h, rate: signal ? rate : nil)
+        }
     }
 
     static func decode(_ b: [UInt8]) -> (temperature: Double?, voltage: Double?) {
@@ -308,11 +346,17 @@ struct MonitoringPage: View {
             VStack(alignment: .leading, spacing: 6) {
                 if let inputs {
                     let active = inputs.filter { $0.signal || $0.width > 0 }
-                    if active.isEmpty { Text("No input reports a signal (register 0x13010001).").foregroundStyle(.red) }
+                    if active.isEmpty {
+                        if inputs.contains(where: { $0.name != nil }) {
+                            Text("No input reports a signal.").foregroundStyle(.red)
+                        } else {
+                            Text("No input reports a signal (register 0x13010001).").foregroundStyle(.red)
+                        }
+                    }
                     DisclosureGroup("Raw input status") {
                         VStack(alignment: .leading, spacing: 2) {
                             ForEach(inputs) { input in
-                                Text("\(input.index): " + input.raw.map { String(format: "%02X", $0) }.joined(separator: " "))
+                                Text(verbatim: "\(input.name ?? String(input.index)): " + input.rawText)
                                     .font(.caption2.monospaced()).textSelection(.enabled)
                             }
                         }
@@ -321,7 +365,10 @@ struct MonitoringPage: View {
                     ForEach(active) { input in
                         HStack(spacing: 8) {
                             Circle().fill(input.signal ? Color.green : Color.red).frame(width: 9, height: 9)
-                            Text("Input \(input.index)").font(.callout.weight(.medium))
+                            Group {
+                                if let name = input.name { Text(verbatim: name) } else { Text("Input \(input.index)") }
+                            }
+                            .font(.callout.weight(.medium))
                             Text(input.signal ? "\(input.width) × \(input.height)\(input.interlaced ? "i" : "")"
                                  + (input.rate.map { String(format: " @ %.2f Hz", $0) } ?? "") : "no signal")
                                 .font(.callout.monospacedDigit()).foregroundStyle(.secondary)
