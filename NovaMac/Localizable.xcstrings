@@ -3782,6 +3782,22 @@
         }
       }
     },
+    "No input reports a signal." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ни один вход не сообщает о сигнале."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有输入报告信号。"
+          }
+        }
+      }
+    },
     "No mapped cabinets on this screen. Read the screen from the hardware on Screen Connection first." : {
       "localizations" : {
         "ru" : {
