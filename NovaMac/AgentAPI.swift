@@ -295,7 +295,8 @@ final class AgentAPI: ObservableObject {
                                          "note": "temperature verified against NovaLCT; voltage not yet confirmed"]
             if let inputs = try? await ScreenMonitor.inputs(screen.endpoint), ControllerModels.isVXPro(device.ids[screen.endpoint.key]) {
                 result["inputs"] = inputs.filter { $0.signal || $0.width > 0 }.map {
-                    ["input": $0.index, "signal": $0.signal, "width": $0.width, "height": $0.height, "rate_hz": opt($0.rate)] as [String: Any]
+                    ["input": $0.index, "name": opt($0.name), "signal": $0.signal, "width": $0.width, "height": $0.height,
+                     "rate_hz": opt($0.rate)] as [String: Any]
                 }
             }
             return .json(200, result)
