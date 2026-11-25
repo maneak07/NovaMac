@@ -530,11 +530,18 @@ nonisolated enum ControllerModels {
     /// Verified: MCTRL300 over USB (21.10.2026) reads F639 / 0001; VX1000 Pro reads family 0x622B.
     static let byHardware: [Int: String] = [0xF639: "MCTRL300"]
     static let byFamily: [Int: String] = [0x622B: "VX1000 Pro", 0x622C: "VX2000 Pro",   // 622C: reported by the owner (07.11.2026)
-                                          0x1113: "MEE410"]   // MEE410: FFFF / 1113 (21.10.2026)
+                                          0x1113: "MEE410",    // MEE410: FFFF / 1113 (21.10.2026)
+                                          0x7B48: "H Series"]  // H2: 3609 / 7B48 (25.11.2026)
         .merging(TaurusSession.families) { a, _ in a }       // TB30: 0000 / 9620 (07.11.2026, Georg Schröjahr)
 
     /// VX Pro family IDs (register 0x00000002): web interface (Unico), VX register map.
     static let vxProFamilies: Set<Int> = [0x622B, 0x622C]
+    /// H series (register 0x00000002 = 0x7B48 on H2, 25.11.2026): VX Pro port blocks, no web interface on 5200.
+    static let hSeriesFamilies: Set<Int> = [0x7B48]
+    static func isHSeries(name: String?) -> Bool {
+        let n = name?.uppercased().replacingOccurrences(of: " ", with: "") ?? ""
+        return n == "HSERIES" || (n.hasPrefix("H") && n.count <= 4 && Int(n.dropFirst()) != nil)
+    }
     static func isVXPro(_ id: ID?) -> Bool { id.map { vxProFamilies.contains($0.family) || vxProFamilies.contains($0.hardware) } ?? false }
 
     /// Address of the sending card's area record for port `port` (0-based): flag, W, H, X, Y (u16).
@@ -550,6 +557,7 @@ nonisolated enum ControllerModels {
             return units[port / 4] + 9 * UInt32(port % 4)
         }
         if name.hasPrefix("VX") && name.hasSuffix("PRO") { return vxBlock(port) }
+        if isHSeries(name: name) { return vxBlock(port) }     // H2: same blocks (NovaLCT Send, 25.11.2026)
         return port < 16 ? 0x0200_0050 + 9 * UInt32(port) : nil
     }
 
@@ -602,7 +610,10 @@ nonisolated enum ControllerModels {
                                     // (0–5, 8–13, 16–21 answer; 6, 7, 14, 15 never do — register dump 21.10.2026),
                                     // so 24 port numbers are searched to reach every connected port.
                                     "MEE410": 24,
-                                    "TB30": 1]
+                                    "TB30": 1,
+                                    // H series: ports of the output card (H2 with a 20-port card, 25.11.2026);
+                                    // the screen view also counts the ports the cards use.
+                                    "H2": 20, "HSERIES": 20]
         return table[model]
     }
 

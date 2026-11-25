@@ -126,14 +126,27 @@ enum ScreenConnectionWriter {
     /// - classic: MCTRL300 over USB (21.10.2026, 3 sends on ports 1 and 2): only 0x02000018/19 are
     ///   reset, no 0x0200004A, port block stride 9 (0x02000050 + 9·p), no port record (0x03200000)
     ///   and no 0x02030000, coordinate table written in 256-byte pieces.
+    /// - hSeries: H2 over TCP 5202 (25.11.2026, NovaLCT Send of 6 screens): the VX Pro register map, but
+    ///   0x0200004A = 1, no 0x020000F0, no port records (0x03200000) and no 0x02030000; the screen size
+    ///   (0x02000024/26/2C, 0x020001EC) is the whole output canvas, not one screen. Ports not sent keep their areas.
     nonisolated enum Profile: Sendable, Equatable {
-        case vxPro, classic
+        case vxPro, classic, hSeries
 
         /// Model ID (register 0x00000002): 0x622B = VX1000 Pro, 0x622C = VX2000 Pro (assumed to match VX1000 Pro);
-        /// anything else is treated as a classic MCTRL card.
-        static func forModel(_ id: Int) -> Profile { ControllerModels.vxProFamilies.contains(id) ? .vxPro : .classic }
-        var name: String { self == .vxPro ? "VX Pro" : "MCTRL (classic)" }
-        var tablePiece: Int { self == .vxPro ? 4096 : 256 }
+        /// 0x7B48 = H series; anything else is treated as a classic MCTRL card.
+        static func forModel(_ id: Int) -> Profile {
+            if ControllerModels.vxProFamilies.contains(id) { return .vxPro }
+            if ControllerModels.hSeriesFamilies.contains(id) { return .hSeries }
+            return .classic
+        }
+        var name: String {
+            switch self {
+            case .vxPro: return "VX Pro"
+            case .hSeries: return "H series"
+            case .classic: return "MCTRL (classic)"
+            }
+        }
+        var tablePiece: Int { self == .classic ? 256 : 4096 }
     }
 
     /// Several ports (register protocol, classic cards): every port gets the box around its cards as its
@@ -239,6 +252,75 @@ enum ScreenConnectionWriter {
         return list
     }
 
+    /// H series (H2, NovaLCT Send to HW 25.11.2026): only the ports of this layout are written, so the other
+    /// screens of the controller stay as they are. The canvas size is patched in at send time (see
+    /// `hSeriesCanvas`): it must stay the size of the whole output, not of this screen.
+    static func hSeriesCommands(for layout: Layout) -> [NovaCommand] {
+        let w = layout.width, h = layout.height
+        let le16 = { (v: Int) in NovaBytes.le16(v) }
+        var list: [NovaCommand] = []
+        for address in ControllerModels.vxResets(portCount: 20) { list.append(.write(address, [0], destination: 0xFF)) }
+        for (address, data) in [(UInt32(0x0200_004A), [UInt8(1)]), (0x0200_0028, le16(0)), (0x0200_002A, le16(0)),
+                                (0x0200_0024, le16(w)), (0x0200_0026, le16(h)), (0x0200_002C, le16(w))] {
+            list.append(.write(address, data))
+        }
+        struct Area { let port: Int, x: Int, y: Int, w: Int, h: Int, cards: [Card] }
+        let areas: [Area] = layout.ports.map { port in
+            let cards = layout.cards.filter { $0.port == port }
+            let x0 = cards.map(\.x).min() ?? 0, y0 = cards.map(\.y).min() ?? 0
+            return Area(port: port, x: x0, y: y0,
+                        w: (cards.map { $0.x + $0.width }.max() ?? 0) - x0,
+                        h: (cards.map { $0.y + $0.height }.max() ?? 0) - y0, cards: cards)
+        }
+        for a in areas {
+            guard let block = ControllerModels.vxBlock(a.port) else { continue }
+            list.append(.write(block + 5, le16(a.x))); list.append(.write(block + 7, le16(a.y)))
+            list.append(.write(block + 1, le16(a.w))); list.append(.write(block + 3, le16(a.h)))
+            list.append(.write(0x0310_0000 + 0x20 * UInt32(ControllerModels.vxBlockIndex(a.port)), le16(a.cards.count)))
+            list.append(.write(block, [0]))
+        }
+        for a in areas {
+            let n = a.cards.count
+            let position = Dictionary(a.cards.map { ($0.chainIndex, UInt32($0.x - a.x) | UInt32($0.y - a.y) << 16) },
+                                      uniquingKeysWith: { first, _ in first })
+            var table: [UInt8] = []
+            table.reserveCapacity(4096)
+            for i in 0..<1024 { table += NovaBytes.le32(position[i % max(1, n)] ?? 0) }
+            for piece in stride(from: 0, to: 4096, by: 512) {      // NovaLCT writes 512 bytes per frame on H2
+                list.append(.write(0x0300_0000 + 0x1000 * UInt32(a.port) + UInt32(piece), Array(table[piece..<piece + 512])))
+            }
+        }
+        for a in areas { list.append(.write(0x0200_009A, [0], device: 1, port: UInt8(a.port), card: 0xFFFF)) }
+        for a in areas {
+            for card in a.cards {
+                list.append(.write(0x0200_0017, le16(card.width), device: 1, port: UInt8(a.port), card: UInt16(card.chainIndex)))
+                list.append(.write(0x0200_0019, le16(card.height), device: 1, port: UInt8(a.port), card: UInt16(card.chainIndex)))
+            }
+        }
+        list.append(.write(0x0100_0012, [0xAA], destination: 0xFF, device: 1, port: 0xFF, card: 0xFFFF, reserved: 0x08))
+        list.append(.write(0x0200_01EC, le16(w) + le16(h)))
+        list.append(.write(0x0200_00AE, [1], destination: 0xFF))
+        return list
+    }
+
+    /// Replaces the canvas size in an H series sequence by (at least) the controller's current one.
+    nonisolated static func hSeriesCanvas(_ steps: [NovaCommand], socket: NovaSocket) -> [NovaCommand] {
+        guard let b = try? socket.transact(.read(0x0200_0024, length: 4)), b.count == 4 else { return steps }
+        let cw = Int(b[0]) + Int(b[1]) * 256, ch = Int(b[2]) + Int(b[3]) * 256
+        guard (1...16384).contains(cw), (1...16384).contains(ch) else { return steps }
+        func le(_ v: Int) -> [UInt8] { [UInt8(v & 0xFF), UInt8((v >> 8) & 0xFF)] }
+        func u16(_ d: [UInt8], _ i: Int) -> Int { d.count > i + 1 ? Int(d[i]) + Int(d[i + 1]) * 256 : 0 }
+        return steps.map { c in
+            guard c.write, c.device == 0 else { return c }
+            switch c.address {
+            case 0x0200_0024, 0x0200_002C: return .write(c.address, le(max(cw, u16(c.data, 0))))
+            case 0x0200_0026: return .write(c.address, le(max(ch, u16(c.data, 0))))
+            case 0x0200_01EC: return .write(c.address, le(max(cw, u16(c.data, 0))) + le(max(ch, u16(c.data, 2))))
+            default: return c
+            }
+        }
+    }
+
     static func commands(for layout: Layout, profile: Profile = .vxPro) -> [NovaCommand] {
         let w = layout.width, h = layout.height, n = layout.cards.count
         var list: [NovaCommand] = []
@@ -314,6 +396,12 @@ enum ScreenConnectionWriter {
         // MEE410 keeps its port areas elsewhere (see ControllerModels.portBlock): always the per-port form.
         let mee = target.model?.uppercased().replacingOccurrences(of: " ", with: "") == "MEE410"
         if target.ports.count > 1 || mee { return try await sendRegistersMulti(endpoint, layout: target) }
+        // H series: always the per-port form (it leaves the other screens alone).
+        let family = try await NovaLink.run(endpoint, timeout: 2) { socket -> Int in
+            let id = try socket.transact(.read(0x0000_0002, length: 2))
+            return id.count == 2 ? Int(id[0]) + Int(id[1]) * 256 : 0
+        }
+        if Profile.forModel(family) == .hSeries { return try await sendRegistersMulti(endpoint, layout: target) }
         let vxSequence = Self.commands(for: target, profile: .vxPro)
         let classicSequence = Self.commands(for: target, profile: .classic)
         let p = UInt32(target.portIndex), n = target.cards.count
@@ -374,6 +462,7 @@ enum ScreenConnectionWriter {
     static func sendRegistersMulti(_ endpoint: NovaEndpoint, layout target: Layout) async throws -> String {
         let classicSteps = multiPortCommands(for: target, model: target.model)
         let vxSteps = vxMultiPortCommands(for: target)
+        let hSteps = hSeriesCommands(for: target)
         var blocks: [Int: UInt32] = [:]
         var vxBlocks: [Int: UInt32] = [:]
         for port in target.ports {
@@ -393,8 +482,13 @@ enum ScreenConnectionWriter {
             let id = try socket.transact(.read(0x0000_0002, length: 2))
             let family = id.count == 2 ? Int(id[0]) + Int(id[1]) * 256 : 0
             let profile = Profile.forModel(family)
-            let steps = profile == .vxPro ? vxSteps : classicSteps
-            let useBlocks = profile == .vxPro ? vxAreaBlocks : areaBlocks
+            let steps: [NovaCommand]
+            switch profile {
+            case .vxPro: steps = vxSteps
+            case .hSeries: steps = ScreenConnectionWriter.hSeriesCanvas(hSteps, socket: socket)
+            case .classic: steps = classicSteps
+            }
+            let useBlocks = profile == .classic ? areaBlocks : vxAreaBlocks
             for (k, command) in steps.enumerated() {
                 do { try socket.transact(command) } catch {
                     let message = String(format: "Step %d of %d: write 0x%08X port %d: ", k + 1, steps.count, command.address, Int(command.port))
@@ -445,6 +539,12 @@ enum ScreenConnectionWriter {
     /// Sends the layout without saving, then reads the topology back through Unico and checks it.
     static func send(ip: String, layout target: Layout) async throws -> String {
         if target.ports.count > 1 { return try await sendRegistersMulti(.network(ip), layout: target) }
+        // H series has no web interface to verify through: per-port register send with read-back.
+        let family = try await NovaLink.run(ip: ip) { socket -> Int in
+            let id = try socket.transact(.read(0x0000_0002, length: 2))
+            return id.count == 2 ? Int(id[0]) + Int(id[1]) * 256 : 0
+        }
+        if Profile.forModel(family) == .hSeries { return try await sendRegistersMulti(.network(ip), layout: target) }
         let sequence = Self.commands(for: target)
         try await NovaLink.run(ip: ip) { socket in
             // Same first read NovaLCT does; proves the link before any write.
@@ -549,7 +649,7 @@ enum ClassicSave {
             var model = 0
             if id.count == 2 { model = Int(id[0]) + Int(id[1]) * 256 }
             let profile = ScreenConnectionWriter.Profile.forModel(model)
-            if profile == .vxPro {
+            if profile == .vxPro {   // H2 answers 0xFF here and NovaLCT saves anyway
                 let check = try socket.transact(.read(0x0200_009D, length: 1))
                 guard check.first == 0x5A else {
                     throw NovaLinkError.badResponse(String(format: "save refused — sending card status 0x%02X (expected 0x5A)", Int(check.first ?? 0)))

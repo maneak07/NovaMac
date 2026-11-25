@@ -184,6 +184,8 @@ struct ScreenConnectionView: View {
                 .disabled(useUSB)
                 .help("Auto: controllers with a web interface (Unico: VX Pro, COEX) get the layout over REST and store it themselves; other sending cards get it over TCP 5200 without saving.")
                 Button("Send to HW…") { prepareSend() }
+                    .disabled(screen.sendBlocked != nil)
+                    .help(screen.sendBlocked ?? "Send the plan to the controller")
                     .disabled(busy)
                 Button("Save to HW…") { confirmSave = true }
                     .disabled(busy)
@@ -250,7 +252,10 @@ struct ScreenConnectionView: View {
                 restAvailable = (try? await UnicoAPI.fetchScreens(ip: address)) != nil
             }
             if useUSB {
-                portCount = ControllerModels.portCount(model: device.models[endpoint.key]) ?? max(2, (usbCards.map(\.port).max() ?? 0) + 1)
+                // Ports of the model, but never fewer than the cards and the plan already use (H series: the
+                // output card decides, the model table may not know it).
+                let used = max((usbCards.map(\.port).max() ?? -1) + 1, plan.cells.filter { $0.order != nil }.map(\.port).max() ?? 0)
+                portCount = max(ControllerModels.portCount(model: device.models[endpoint.key]) ?? 2, used)
             }
             while !Task.isCancelled {
                 if useUSB {

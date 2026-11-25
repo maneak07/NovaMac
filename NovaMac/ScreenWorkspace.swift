@@ -44,6 +44,10 @@ final class ScreenDocument: ObservableObject, Identifiable {
     /// Name of the screen on the controller (from Read from HW), shown with the tab.
     @Published var hardwareName = ""
 
+    /// Set when the screen came from NovaLCT's screen file of a controller that runs several screens:
+    /// Send to HW would replace all of them with this one, so it is refused until that send is captured.
+    @Published var sendBlocked: String?
+
     var name: String { "Screen \(number)" }
 }
 
@@ -83,6 +87,33 @@ final class ScreenWorkspace: ObservableObject {
         return doc
     }
 
+    /// The screens NovaLCT stored in the controller (H series and other controllers without a web interface).
+    /// nil when the controller keeps no such file or it cannot be read.
+    private func screenFileDocuments(_ endpoint: NovaEndpoint, device: NovaDevice) async -> [ScreenDocument]? {
+        guard let filed = try? await ScreenConfigFile.read(endpoint), !filed.isEmpty else { return nil }
+        await device.ensureModel(endpoint)
+        let model = device.models[endpoint.key] ?? "controller"
+        let ports = ControllerModels.portCount(model: device.models[endpoint.key]) ?? 32
+        let cards = (try? await RegisterInventory.read(endpoint, ports: ports, model: device.models[endpoint.key])) ?? []
+        let (screens, changed) = ScreenConfigFile.merge(filed, hardware: cards)
+        return screens.map { s in
+            let doc = ScreenDocument(number: 0, endpoint: endpoint)
+            let plan = ScreenConfigFile.plan(s)
+            doc.hardwareName = "\(model) · screen \(s.number)" + (s.complex ? " (complex)" : "")
+            doc.plan = plan; doc.columns = plan.columns; doc.rows = plan.rows
+            if let p = plan.cells.first?.port { doc.port = p }
+            let ports = Set(s.cabinets.map(\.port))
+            doc.usbCards = cards.filter { ports.contains($0.port) }
+            let x0 = s.cabinets.map(\.x).min() ?? 0, y0 = s.cabinets.map(\.y).min() ?? 0
+            let w = (s.cabinets.map { $0.x + $0.width }.max() ?? 0) - x0, h = (s.cabinets.map { $0.y + $0.height }.max() ?? 0) - y0
+            doc.status = "Read from HW: NovaLCT screen \(s.number)" + (s.complex ? " (complex screen)" : "")
+                + ", \(s.cabinets.count) cabinets, \(w) × \(h) at X \(x0), Y \(y0)."
+                + (screens.count > 1 ? " Send to HW writes only this screen's ports; the other screens stay as they are." : "")
+                + (changed.contains(s.number) ? " Cabinets and positions from the receiving cards (NovaLCT's saved copy differs)." : "")
+            return doc
+        }
+    }
+
     /// No tab has any card yet (nothing the user could lose by reading from the hardware).
     var isBlank: Bool { screens.allSatisfy { $0.plan.cells.isEmpty } }
 
@@ -115,8 +146,13 @@ final class ScreenWorkspace: ObservableObject {
         var notes: [String] = []
         for ip in device.savedIPs {
             guard let snapshots = try? await UnicoTopology.readAllScreens(ip: ip) else {
-                // No web interface (MEE410, MCTRL over Ethernet…): read the cards over the register protocol.
+                // No web interface (MEE410, H series, MCTRL over Ethernet…): NovaLCT's screen file first,
+                // otherwise the cards over the register protocol.
                 let endpoint = NovaEndpoint.network(ip)
+                if let docs = await screenFileDocuments(endpoint, device: device) {
+                    for doc in docs where found.count < Self.maxScreens { doc.number = found.count + 1; found.append(doc) }
+                    continue
+                }
                 await device.ensureModel(endpoint)
                 let ports = ControllerModels.portCount(model: device.models[endpoint.key]) ?? 32
                 let cards: [RegisterInventory.Card]
@@ -206,6 +242,8 @@ final class ScreenWorkspace: ObservableObject {
                 doc.status = "Read from HW: \(snapshot.name), \(snapshot.plan.cells.filter { $0.order != nil }.count) cards."
                 found.append(doc)
             }
+        } else if case .network = target, let docs = await screenFileDocuments(target, device: device) {
+            found += docs
         } else {
             await device.ensureModel(target)
             let model = device.models[target.key]
